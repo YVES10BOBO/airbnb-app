@@ -1,0 +1,39 @@
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.login-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.login-form__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #222;
+}
+
+.login-form__input {
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.login-form__input:focus {
+  border-color: #FF4A2A;
+}
+
+.login-form__submit {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+  border-radius: 8px;
+  margin-top: 4px;
+}

@@ -1,0 +1,5 @@
+/* SignUpPage uses LoginPage.css shared auth styles */
+/* Extra field gap adjustment for 3 fields */
+.auth-split__form .auth-form {
+  gap: 12px;
+}

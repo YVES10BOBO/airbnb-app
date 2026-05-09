@@ -1,0 +1,244 @@
+.pf-page {
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Hero card (banner + avatar + identity) ── */
+.pf-hero-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+  overflow: visible;
+  padding-bottom: 28px;
+}
+
+/* Banner */
+.pf-banner {
+  width: 100%;
+  height: 180px;
+  border-radius: 16px 16px 0 0;
+  background: linear-gradient(135deg, #FF4A2A 0%, #ff7043 50%, #ffb347 100%);
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  overflow: hidden;
+}
+.pf-banner__upload-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  background: #fff;
+  border: none;
+  border-radius: 50px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: all 0.15s;
+}
+.pf-banner__upload-btn:hover { background: #f5f5f5; transform: translateY(-1px); }
+
+/* Avatar overlapping banner */
+.pf-avatar-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: -52px;
+  position: relative;
+  z-index: 2;
+}
+.pf-avatar {
+  position: relative;
+  width: 104px;
+  height: 104px;
+}
+.pf-avatar__img,
+.pf-avatar__initials {
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pf-avatar__initials {
+  background: #FF4A2A;
+  color: #fff;
+  font-size: 32px;
+  font-weight: 700;
+}
+.pf-avatar__cam {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #FF4A2A;
+  border: 2px solid #fff;
+  color: #fff;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.pf-avatar__cam:hover { background: #D93C1A; }
+
+/* Identity text */
+.pf-identity {
+  text-align: center;
+  padding: 14px 16px 0;
+}
+.pf-identity__name {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.pf-identity__check { color: #16a34a; font-size: 18px; }
+.pf-identity__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #666;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.pf-identity__sep { color: #ddd; }
+.pf-meta-icon { font-size: 12px; margin-right: 4px; color: #aaa; }
+.pf-meta-icon--orange { color: #FF4A2A; }
+
+/* ── Section cards ── */
+.pf-section-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+  padding: 28px 32px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.pf-section__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.pf-section__bar {
+  width: 4px;
+  height: 22px;
+  background: #FF4A2A;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.pf-section__title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #111;
+}
+
+/* Grids */
+.pf-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 18px;
+}
+.pf-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+/* Fields */
+.pf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+}
+.pf-field__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pf-req     { color: #FF4A2A; }
+.pf-optional { font-size: 12px; font-weight: 400; color: #aaa; }
+
+.pf-field__input,
+.pf-field__textarea {
+  border: 1.5px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #111;
+  background: #fafafa;
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+  resize: vertical;
+}
+.pf-field__input:focus,
+.pf-field__textarea:focus {
+  border-color: #FF4A2A;
+  background: #fff;
+}
+.pf-field__input::placeholder,
+.pf-field__textarea::placeholder { color: #bbb; }
+.pf-field__count {
+  font-size: 11px;
+  color: #bbb;
+  text-align: right;
+  margin-top: 2px;
+}
+
+/* Social icon in label */
+.pf-social-icon { font-size: 13px; }
+.pf-social-icon--fb { color: #1877f2; }
+.pf-social-icon--tw { color: #1da1f2; }
+.pf-social-icon--ig { color: #e1306c; }
+.pf-social-icon--li { color: #0a66c2; }
+
+.pf-divider { border: none; border-top: 1px solid #f0f0f0; margin: 4px 0; }
+
+/* Form actions */
+.pf-form-actions { display: flex; justify-content: flex-end; }
+.pf-btn {
+  padding: 11px 30px;
+  border: none;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pf-btn--primary { background: #FF4A2A; color: #fff; }
+.pf-btn--primary:hover { background: #D93C1A; transform: translateY(-1px); }
+
+/* ── Responsive ── */
+@media (max-width: 720px) {
+  .pf-grid-3 { grid-template-columns: 1fr; }
+  .pf-grid-2 { grid-template-columns: 1fr; }
+  .pf-section-card { padding: 20px 16px; }
+  .pf-banner { height: 140px; }
+}

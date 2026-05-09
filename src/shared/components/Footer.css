@@ -1,0 +1,410 @@
+/* ── Footer base ── */
+.footer {
+  background: #13141f;
+  color: #ccc;
+  margin-top: auto;
+}
+
+/* ── App download banner ── */
+.footer__banner {
+  background: #FF4A2A;
+  padding: 20px 0;
+}
+
+.footer__banner-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  justify-content: space-between;
+}
+
+.footer__banner-btns {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.footer__store-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 2px solid rgba(255,255,255,0.7);
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+
+.footer__store-btn:hover { background: rgba(255,255,255,0.1); }
+
+.footer__store-btn span {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  text-align: left;
+}
+
+.footer__store-label {
+  font-size: 10px;
+  opacity: 0.85;
+}
+
+.footer__store-name {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.footer__store-apple {
+  font-size: 22px;
+}
+
+.footer__banner-text {
+  flex: 1;
+  text-align: right;
+}
+
+.footer__banner-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.footer__banner-sub {
+  font-size: 13px;
+  color: rgba(255,255,255,0.85);
+  line-height: 1.55;
+}
+
+/* Phone mockups */
+.footer__phones {
+  position: relative;
+  width: 140px;
+  height: 130px;
+  flex-shrink: 0;
+}
+
+.footer__phone {
+  position: absolute;
+  width: 72px;
+  height: 118px;
+  border-radius: 10px;
+  background: #1a1a2e;
+  border: 2px solid rgba(255,255,255,0.25);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.footer__phone--front {
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+}
+
+.footer__phone--back {
+  top: 0;
+  right: 0;
+  z-index: 1;
+  background: #fff;
+  border-color: rgba(0,0,0,0.15);
+}
+
+.footer__phone-notch {
+  width: 24px;
+  height: 6px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 0 0 4px 4px;
+  margin: 0 auto 6px;
+}
+
+.footer__phone--back .footer__phone-notch {
+  background: rgba(0,0,0,0.1);
+}
+
+.footer__phone-screen {
+  flex: 1;
+  padding: 4px 6px;
+}
+
+.footer__phone-screen--light {
+  background: #f5f5f5;
+}
+
+.footer__phone-line1 {
+  font-size: 8px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.footer__phone-line1 em { color: #FF4A2A; font-style: italic; }
+
+.footer__phone-line2 {
+  font-size: 7px;
+  color: rgba(255,255,255,0.8);
+  line-height: 1.3;
+  margin: 3px 0;
+}
+
+.footer__phone-find {
+  font-size: 8px;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 4px;
+}
+
+.footer__phone-card {
+  height: 24px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.footer__phone-card--light {
+  background: rgba(0,0,0,0.08);
+}
+
+.footer__phone-card--sm {
+  height: 16px;
+}
+
+/* ── Main columns ── */
+.footer__main {
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.footer__cols {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 48px 40px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 40px;
+}
+
+.footer__col-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* Subscribe form */
+.footer__subscribe {
+  display: flex;
+  background: #1e1f2e;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 24px;
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+.footer__sub-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 11px 14px;
+  font-size: 13px;
+  color: #ccc;
+  font-family: inherit;
+  outline: none;
+}
+
+.footer__sub-input::placeholder { color: #666; }
+
+.footer__sub-btn {
+  background: #FF4A2A;
+  border: none;
+  width: 40px;
+  cursor: pointer;
+  color: #fff;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.footer__sub-btn:hover { background: #D93C1A; }
+
+.footer__follow-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.footer__socials {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.footer__social-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #1e1f2e;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #aaa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.footer__social-btn:hover {
+  background: #FF4A2A;
+  color: #fff;
+  border-color: #FF4A2A;
+}
+
+/* Col 2 - contact */
+.footer__col--mid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.footer__contact {
+  font-size: 13px;
+  color: #999;
+  line-height: 1.65;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  text-align: center;
+}
+
+.footer__contact-icon {
+  color: #FF4A2A;
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Col 3 */
+.footer__col--right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.footer__newsletter-text {
+  font-size: 13px;
+  color: #999;
+  line-height: 1.65;
+  margin-bottom: 18px;
+}
+
+.footer__whatsapp-box {
+  background: #1e1f2e;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+.footer__whatsapp-label {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 6px;
+}
+
+.footer__whatsapp-num {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: underline;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.footer__join-line {
+  font-size: 13px;
+  color: #999;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.footer__join-line strong { color: #fff; }
+
+.footer__join-email {
+  font-size: 13px;
+  color: #999;
+}
+
+/* ── Bottom bar ── */
+.footer__bottom {
+  background: #0e0f1a;
+}
+
+.footer__bottom-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 16px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.footer__bottom-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer__bottom-links a {
+  font-size: 13px;
+  color: #777;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer__bottom-links a:hover { color: #FF4A2A; }
+
+.footer__bottom-sep {
+  color: #555;
+  font-size: 13px;
+}
+
+.footer__bottom-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.footer__bottom-copy {
+  font-size: 13px;
+  color: #666;
+}
+
+.footer__bottom-logo {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  text-decoration: none;
+  letter-spacing: -0.5px;
+}
+
+.footer__bottom-logo span {
+  color: #FF4A2A;
+  font-style: italic;
+}

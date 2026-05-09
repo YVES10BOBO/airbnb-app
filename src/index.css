@@ -1,0 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* NProgress */
+#nprogress .bar { background: #FF4A2A !important; height: 3px !important; }
+#nprogress .peg { box-shadow: 0 0 10px #FF4A2A, 0 0 5px #FF4A2A !important; }
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    @apply bg-gray-50 text-gray-900;
+  }
+}
+
+@layer components {
+  /* Shared button variants */
+  .btn {
+    @apply inline-flex items-center gap-2 border-none rounded-full px-5 py-2.5 text-sm font-semibold cursor-pointer transition-all duration-200 font-sans;
+  }
+  .btn--active {
+    @apply bg-primary text-white hover:bg-primary-dark;
+  }
+  .btn--outline {
+    @apply bg-white text-gray-800 border-2 border-gray-200 hover:border-primary hover:text-primary;
+  }
+
+  /* Hero section */
+  .hero {
+    background: linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)),
+      url('https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1400&fit=crop') center/cover no-repeat;
+    @apply min-h-[420px] md:min-h-[480px] flex items-center justify-center text-center px-5 py-10;
+  }
+  .hero__content { @apply max-w-2xl; }
+  .hero__sub { @apply text-xs font-semibold tracking-widest text-white/80 mb-4 uppercase; }
+  .hero__title {
+    @apply text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-4;
+  }
+  .hero__title em { @apply not-italic text-primary underline decoration-primary; }
+  .hero__desc { @apply text-white/85 text-base mb-8; }
+  .hero__search { @apply max-w-lg mx-auto; }
+
+  .search-bar {
+    @apply flex items-center bg-white rounded-full px-6 py-3.5 gap-3 shadow-xl;
+  }
+  .search-bar__icon { @apply text-lg text-gray-400; }
+  .search-bar__input {
+    @apply flex-1 border-none outline-none text-sm font-sans text-gray-800 bg-transparent;
+  }
+
+  /* Listings section */
+  .listings-section {
+    @apply max-w-6xl mx-auto px-4 sm:px-6 py-10;
+  }
+  .listings-toolbar {
+    @apply flex flex-wrap justify-between items-center mb-7 gap-3;
+  }
+  .listings-toolbar__left { @apply flex items-center gap-3; }
+  .listings-toolbar__title { @apply text-xl font-bold text-gray-900; }
+  .saved-badge {
+    @apply bg-primary text-white text-xs font-bold px-3 py-1 rounded-full;
+  }
+  .listings-grid {
+    @apply grid gap-6;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+  .empty-state {
+    @apply text-center py-20 text-gray-400;
+  }
+  .empty-state p { @apply text-xl mb-5; }
+}
