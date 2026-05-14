@@ -1,7 +1,8 @@
 import { useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaSearch, FaSlidersH, FaTimes, FaStar, FaMapMarkerAlt, FaChevronDown } from 'react-icons/fa';
+import { FaSearch, FaSlidersH, FaTimes, FaStar, FaMapMarkerAlt, FaChevronDown, FaThLarge, FaMap, FaUmbrellaBeach, FaMountain, FaCity, FaLeaf } from 'react-icons/fa';
 import { useStore } from '../../../store/StoreContext';
+import ListingCover from '../components/ListingCover';
 import { useListings } from '../hooks/useListings';
 import { useFavorites } from '../hooks/useFavorites';
 import ListingCard from '../components/ListingCard';
@@ -9,11 +10,11 @@ import Spinner from '../../../shared/components/Spinner';
 import './ListingsPage.css';
 
 const CATEGORIES = ['beach', 'mountain', 'city', 'countryside'] as const;
-const CATEGORY_ICONS: Record<string, string> = {
-  beach: '🏖️',
-  mountain: '⛰️',
-  city: '🏙️',
-  countryside: '🌾',
+const CATEGORY_ICONS: Record<string, React.ReactNode> = {
+  beach:       <FaUmbrellaBeach />,
+  mountain:    <FaMountain />,
+  city:        <FaCity />,
+  countryside: <FaLeaf />,
 };
 const SORT_OPTIONS = [
   { value: 'default', label: 'Recommended' },
@@ -53,6 +54,7 @@ export default function ListingsPage() {
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [sort, setSort] = useState<SortKey>('default');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
 
   useListings();
 
@@ -148,17 +150,9 @@ export default function ListingsPage() {
         </div>
       </div>
 
-      {/* ── Main layout ── */}
-      <div className="lp-layout">
-
-        {/* Sidebar toggle for mobile */}
-        <button className="lp-filter-toggle" onClick={() => setSidebarOpen(true)}>
-          <FaSlidersH /> Filters
-          {hasActiveFilters && <span className="lp-filter-toggle__dot" />}
-        </button>
-
-        {/* ── Sidebar ── */}
-        <aside className={`lp-sidebar ${sidebarOpen ? 'lp-sidebar--open' : ''}`}>
+      {/* ── Sidebar overlay ── */}
+      {sidebarOpen && <div className="lp-sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
+      <aside className={`lp-sidebar${sidebarOpen ? ' lp-sidebar--open' : ''}`}>
           <div className="lp-sidebar__header">
             <h3 className="lp-sidebar__title"><FaSlidersH /> Filters</h3>
             <button className="lp-sidebar__close" onClick={() => setSidebarOpen(false)}><FaTimes /></button>
@@ -254,52 +248,107 @@ export default function ListingsPage() {
           </div>
         </aside>
 
-        {/* Sidebar overlay */}
-        {sidebarOpen && <div className="lp-sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
-
-        {/* ── Results ── */}
+      {/* ── Results ── */}
+      <div className="lp-layout">
         <div className="lp-results">
           {/* Toolbar */}
           <div className="lp-toolbar">
-            <p className="lp-toolbar__count">
-              <strong>{filtered.length}</strong> listing{filtered.length !== 1 ? 's' : ''} found
-              {hasActiveFilters && <span className="lp-toolbar__active-tag"> · Filters active</span>}
-            </p>
-            <div className="lp-toolbar__sort">
-              <FaChevronDown className="lp-toolbar__sort-icon" />
-              <select
-                className="lp-toolbar__select"
-                value={sort}
-                onChange={(e) => setSort(e.target.value as SortKey)}
+            <div className="lp-toolbar__left">
+              <button
+                className={`lp-filter-toggle-btn${sidebarOpen ? ' lp-filter-toggle-btn--open' : ''}`}
+                onClick={() => setSidebarOpen(o => !o)}
               >
-                {SORT_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
+                <FaSlidersH />
+                <span>{sidebarOpen ? 'Hide' : 'Filters'}</span>
+                {hasActiveFilters && <span className="lp-filter-toggle__dot" />}
+              </button>
+              <p className="lp-toolbar__count">
+                <strong>{filtered.length}</strong> listing{filtered.length !== 1 ? 's' : ''} found
+                {hasActiveFilters && <span className="lp-toolbar__active-tag"> · Filters active</span>}
+              </p>
+            </div>
+            <div className="lp-toolbar__right">
+              <div className="lp-view-toggle">
+                <button
+                  className={`lp-view-btn${viewMode === 'grid' ? ' lp-view-btn--active' : ''}`}
+                  onClick={() => setViewMode('grid')}
+                  title="Grid view"
+                >
+                  <FaThLarge />
+                </button>
+                <button
+                  className={`lp-view-btn${viewMode === 'map' ? ' lp-view-btn--active' : ''}`}
+                  onClick={() => setViewMode('map')}
+                  title="Map view"
+                >
+                  <FaMap />
+                </button>
+              </div>
+              <div className="lp-toolbar__sort">
+                <FaChevronDown className="lp-toolbar__sort-icon" />
+                <select
+                  className="lp-toolbar__select"
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value as SortKey)}
+                >
+                  {SORT_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
-          {/* Grid */}
-          {loading ? (
-            <Spinner />
-          ) : filtered.length === 0 ? (
-            <div className="lp-empty">
-              <div className="lp-empty__icon"><FaMapMarkerAlt /></div>
-              <h3 className="lp-empty__title">No listings found</h3>
-              <p className="lp-empty__desc">Try adjusting your search or filters to find more stays.</p>
-              <button className="lp-empty__btn" onClick={resetFilters}>Clear all filters</button>
-            </div>
-          ) : (
-            <div className="lp-grid">
-              {filtered.map((listing) => (
-                <ListingCard
-                  key={listing.id}
-                  listing={listing}
-                  saved={isSaved(listing.id)}
-                  onToggleSave={() => toggle(listing.id, listing.title)}
-                  onClick={() => navigate(`/listings/${listing.id}`)}
+          {/* Grid view */}
+          {viewMode === 'grid' && (
+            loading ? (
+              <Spinner />
+            ) : filtered.length === 0 ? (
+              <div className="lp-empty">
+                <div className="lp-empty__icon"><FaMapMarkerAlt /></div>
+                <h3 className="lp-empty__title">No listings found</h3>
+                <p className="lp-empty__desc">Try adjusting your search or filters to find more stays.</p>
+                <button className="lp-empty__btn" onClick={resetFilters}>Clear all filters</button>
+              </div>
+            ) : (
+              <div className="lp-grid">
+                {filtered.map((listing) => (
+                  <ListingCard
+                    key={listing.id}
+                    listing={listing}
+                    saved={isSaved(listing.id)}
+                    onToggleSave={() => toggle(listing.id, listing.title)}
+                    onClick={() => navigate(`/listings/${listing.id}`)}
+                  />
+                ))}
+              </div>
+            )
+          )}
+
+          {/* Map view */}
+          {viewMode === 'map' && (
+            <div className="lp-map-view">
+              <div className="lp-map-list">
+                {filtered.map((listing) => (
+                  <div key={listing.id} className="lp-map-card" onClick={() => navigate(`/listings/${listing.id}`)}>
+                    <ListingCover url={listing.img} alt={listing.title} className="lp-map-card__img" />
+                    <div className="lp-map-card__body">
+                      <p className="lp-map-card__title">{listing.title}</p>
+                      <p className="lp-map-card__loc"><FaMapMarkerAlt />{listing.location}</p>
+                      <p className="lp-map-card__price">${listing.price}<span>/night</span></p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="lp-map-frame">
+                <iframe
+                  title="Map"
+                  src={`https://maps.google.com/maps?q=${encodeURIComponent(search || 'Miami Beach, Florida')}&output=embed&z=11`}
+                  className="lp-map-iframe"
+                  loading="lazy"
+                  allowFullScreen
                 />
-              ))}
+              </div>
             </div>
           )}
         </div>

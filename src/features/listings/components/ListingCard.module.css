@@ -36,6 +36,10 @@
   transform: scale(1.05);
 }
 
+.card:hover :global(.listing-cover-placeholder) {
+  transform: scale(1.05);
+}
+
 /* Heart button */
 .heart {
   position: absolute;

@@ -260,6 +260,44 @@
   justify-content: center;
 }
 
+/* ── Theme toggle pill ── */
+.theme-pill {
+  display: flex; align-items: center; gap: 5px;
+  background: none; border: none; cursor: pointer; padding: 4px; border-radius: 50px;
+  transition: background 0.2s;
+}
+.theme-pill:hover { background: rgba(0,0,0,0.05); }
+html.dark .theme-pill:hover { background: rgba(255,255,255,0.08); }
+
+.theme-pill__icon {
+  font-size: 13px; color: #bbb; transition: color 0.3s, transform 0.3s;
+}
+.theme-pill__icon--active { color: #FF4A2A; transform: scale(1.15); }
+
+.theme-pill__track {
+  width: 44px; height: 24px; border-radius: 12px;
+  background: #e5e7eb; position: relative;
+  transition: background 0.3s; flex-shrink: 0;
+}
+html.dark .theme-pill__track { background: #4b5563; }
+
+.theme-pill__knob {
+  position: absolute; top: 3px; left: 3px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; color: #FF4A2A;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+html.dark .theme-pill__knob {
+  transform: translateX(20px);
+  color: #a78bfa;
+}
+
+.theme-pill--sm .theme-pill__track { width: 36px; height: 20px; }
+.theme-pill--sm .theme-pill__knob { width: 14px; height: 14px; font-size: 7px; }
+html.dark .theme-pill--sm .theme-pill__knob { transform: translateX(16px); }
+
 /* Dark mode base */
 :root.dark .navbar {
   background: #1a1a1a;

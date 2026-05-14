@@ -1,11 +1,14 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import axios from 'axios';
+import { listingsService } from '../../../api';
+import type { ApiListing } from '../../../api/types';
 import {
-  FaBuilding, FaHome, FaUmbrellaBeach, FaTree, FaCity, FaBed,
+  FaBuilding, FaHome, FaUmbrellaBeach, FaTree,
   FaWifi, FaParking, FaSwimmingPool, FaFire, FaTv, FaSnowflake,
   FaDumbbell, FaUtensils, FaTshirt, FaWater,
-  FaPlus, FaMinus, FaCloudUploadAlt, FaTimes, FaCheck, FaChevronRight, FaChevronLeft,
+  FaPlus, FaMinus, FaCloudUploadAlt, FaTimes, FaCheck, FaChevronRight, FaChevronLeft, FaExclamationTriangle,
 } from 'react-icons/fa';
 import './AddListingPage.css';
 
@@ -14,8 +17,6 @@ const PROPERTY_TYPES = [
   { id: 'HOUSE',     label: 'House',     icon: <FaHome /> },
   { id: 'VILLA',     label: 'Villa',     icon: <FaUmbrellaBeach /> },
   { id: 'CABIN',     label: 'Cabin',     icon: <FaTree /> },
-  { id: 'CONDO',     label: 'Condo',     icon: <FaCity /> },
-  { id: 'STUDIO',    label: 'Studio',    icon: <FaBed /> },
 ];
 
 const AMENITIES = [
@@ -44,7 +45,7 @@ interface FormState {
   bathrooms: number;
   beds: number;
   amenities: string[];
-  photos: { url: string; name: string }[];
+  photos: { url: string; name: string; file?: File }[];
   pricePerNight: string;
   cleaningFee: string;
   minNights: string;
@@ -56,6 +57,20 @@ const INIT: FormState = {
   amenities: [], photos: [],
   pricePerNight: '', cleaningFee: '', minNights: '1',
 };
+
+function getApiErrorMessage(err: unknown): string {
+  if (axios.isAxiosError(err)) {
+    const errorText = err.response?.data?.error;
+    if (typeof errorText === 'string') return errorText;
+    const issues = err.response?.data?.errors;
+    if (Array.isArray(issues) && issues.length > 0) {
+      const first = issues[0] as { message?: string };
+      if (typeof first?.message === 'string') return first.message;
+    }
+    if (!err.response) return 'Cannot reach server. Please try again.';
+  }
+  return 'Failed to create listing. Please review your inputs and try again.';
+}
 
 function Counter({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
   return (
@@ -72,12 +87,15 @@ function Counter({ label, value, onChange }: { label: string; value: number; onC
 
 export default function AddListingPage() {
   const navigate  = useNavigate();
-  const [step, setStep]   = useState(0);
-  const [form, setForm]   = useState<FormState>(INIT);
+  const [step, setStep]       = useState(0);
+  const [form, setForm]       = useState<FormState>(INIT);
+  const [stepError, setStepError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   function set<K extends keyof FormState>(key: K, val: FormState[K]) {
     setForm(f => ({ ...f, [key]: val }));
+    setStepError('');
   }
 
   function toggleAmenity(id: string) {
@@ -91,7 +109,7 @@ export default function AddListingPage() {
 
   function handlePhotos(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
-    const newPhotos = files.map(f => ({ url: URL.createObjectURL(f), name: f.name }));
+    const newPhotos = files.map(f => ({ url: URL.createObjectURL(f), name: f.name, file: f }));
     setForm(f => ({ ...f, photos: [...f.photos, ...newPhotos].slice(0, 10) }));
     e.target.value = '';
   }
@@ -100,26 +118,104 @@ export default function AddListingPage() {
     setForm(f => ({ ...f, photos: f.photos.filter((_, idx) => idx !== i) }));
   }
 
-  function canAdvance(): boolean {
-    if (step === 0) return !!form.type;
-    if (step === 1) return !!(form.title.trim() && form.description.trim() && form.location.trim());
-    if (step === 4) return !!(form.pricePerNight && Number(form.pricePerNight) > 0);
-    return true;
+  function getStepValidationError(): string | null {
+    if (step === 0) {
+      if (!form.type) return 'Please choose a property type.';
+      return null;
+    }
+
+    if (step === 1) {
+      if (form.title.trim().length < 10) {
+        return 'Listing title must be at least 10 characters.';
+      }
+      if (form.description.trim().length < 50) {
+        return 'Description must be at least 50 characters.';
+      }
+      if (form.location.trim().length < 2) {
+        return 'City / location is required.';
+      }
+      return null;
+    }
+
+    if (step === 2) {
+      if (form.amenities.length === 0) return 'Select at least one amenity.';
+      return null;
+    }
+
+    if (step === 4) {
+      if (!form.pricePerNight || Number(form.pricePerNight) <= 0) {
+        return 'Please enter a valid price per night.';
+      }
+      return null;
+    }
+
+    return null;
   }
 
   function handleNext() {
-    if (!canAdvance()) { toast.error('Please fill in the required fields.'); return; }
+    const validationError = getStepValidationError();
+    if (validationError) {
+      setStepError(validationError);
+      return;
+    }
+    setStepError('');
     setStep(s => s + 1);
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (form.title.trim().length < 10) {
+      toast.error('Title must be at least 10 characters.');
+      return;
+    }
+    if (form.description.trim().length < 50) {
+      toast.error('Description must be at least 50 characters.');
+      return;
+    }
+    if (form.location.trim().length < 2) {
+      toast.error('Location is required.');
+      return;
+    }
+    if (form.amenities.length === 0) {
+      toast.error('Select at least one amenity.');
+      return;
+    }
     if (!form.pricePerNight || Number(form.pricePerNight) <= 0) {
       toast.error('Please enter a valid price per night.');
       return;
     }
-    toast.success('Listing submitted for review! It will appear once approved.');
-    navigate('/dashboard/my-listings');
+    setSubmitting(true);
+    try {
+      const listing = await listingsService.create({
+        title: form.title,
+        description: form.description,
+        location: form.location,
+        type: form.type as ApiListing['type'],
+        pricePerNight: Number(form.pricePerNight),
+        guests: form.guests,
+        amenities: form.amenities,
+      });
+
+      const photoFiles = form.photos.filter(p => p.file).map(p => p.file!);
+      if (photoFiles.length > 0) {
+        try {
+          await listingsService.uploadPhotos(listing.id, photoFiles);
+        } catch (uploadErr) {
+          const detail = getApiErrorMessage(uploadErr);
+          toast.error(
+            `Listing saved but photos failed: ${detail}. Use JPG/PNG/WebP under 10 MB each. Check Cloudinary env on server.`,
+            { duration: 8000 },
+          );
+          console.warn('Photo upload failed for listing:', listing.id, uploadErr);
+        }
+      }
+      toast.success('Listing created successfully! Submitted for review.');
+      navigate('/dashboard/my-listings');
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -239,7 +335,7 @@ export default function AddListingPage() {
             <div className="al-dropzone" onClick={() => fileRef.current?.click()}>
               <FaCloudUploadAlt className="al-dropzone__icon" />
               <p className="al-dropzone__text">Click to upload photos</p>
-              <p className="al-dropzone__hint">PNG, JPG up to 10 MB each · max 10 photos</p>
+              <p className="al-dropzone__hint">JPG, PNG, or WebP up to 10 MB each · max 10 picks (server saves up to 5)</p>
               <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={handlePhotos} />
             </div>
 
@@ -305,6 +401,13 @@ export default function AddListingPage() {
           </div>
         )}
 
+        {/* ── Step error ── */}
+        {stepError && (
+          <p style={{ color: '#FF4A2A', fontSize: '0.82rem', fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <FaExclamationTriangle /> {stepError}
+          </p>
+        )}
+
         {/* ── Navigation ── */}
         <div className="al-nav">
           {step > 0
@@ -317,8 +420,8 @@ export default function AddListingPage() {
             ? <button type="button" className="al-nav__next" onClick={handleNext}>
                 Next <FaChevronRight />
               </button>
-            : <button type="submit" className="al-nav__submit">
-                <FaCheck /> Submit Listing
+            : <button type="submit" className="al-nav__submit" disabled={submitting}>
+                {submitting ? 'Publishing…' : <><FaCheck /> Submit Listing</>}
               </button>
           }
         </div>

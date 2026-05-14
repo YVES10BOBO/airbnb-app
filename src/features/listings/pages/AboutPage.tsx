@@ -1,4 +1,4 @@
-import { FaMapMarkerAlt, FaPhone, FaEnvelope, FaAward, FaHome, FaUsers, FaStar, FaFacebookF, FaTwitter, FaLinkedinIn } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaPhone, FaEnvelope, FaAward, FaHome, FaUsers, FaStar, FaFacebookF, FaTwitter, FaLinkedinIn, FaGlobe, FaHandshake, FaCheck } from 'react-icons/fa';
 import './AboutPage.css';
 
 const STATS = [
@@ -33,17 +33,17 @@ const TEAM = [
 
 const VALUES = [
   {
-    icon: '🏡',
+    icon: <FaHome style={{ color: '#FF4A2A', fontSize: 26 }} />,
     title: 'Authentic Stays',
     desc: 'Every property on ListOn is verified and curated so you always know what to expect.',
   },
   {
-    icon: '🌍',
+    icon: <FaGlobe style={{ color: '#FF4A2A', fontSize: 26 }} />,
     title: 'Global Reach',
     desc: 'From mountain cabins to city penthouses, we connect you to stays in 120+ cities.',
   },
   {
-    icon: '🤝',
+    icon: <FaHandshake style={{ color: '#FF4A2A', fontSize: 26 }} />,
     title: 'Trust First',
     desc: 'Secure payments, transparent reviews, and 24/7 support keep every booking safe.',
   },
@@ -113,9 +113,9 @@ export default function AboutPage() {
               so you can travel with confidence knowing your stay will exceed expectations.
             </p>
             <div className="about-mission__bullets">
-              <div className="about-mission__bullet">✓ Verified listings with transparent reviews</div>
-              <div className="about-mission__bullet">✓ Secure, flexible booking and cancellation</div>
-              <div className="about-mission__bullet">✓ 24/7 dedicated support team</div>
+              <div className="about-mission__bullet"><FaCheck style={{ color: '#FF4A2A', marginRight: 8 }} /> Verified listings with transparent reviews</div>
+              <div className="about-mission__bullet"><FaCheck style={{ color: '#FF4A2A', marginRight: 8 }} /> Secure, flexible booking and cancellation</div>
+              <div className="about-mission__bullet"><FaCheck style={{ color: '#FF4A2A', marginRight: 8 }} /> 24/7 dedicated support team</div>
             </div>
           </div>
         </section>

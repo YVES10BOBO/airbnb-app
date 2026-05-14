@@ -15,9 +15,19 @@ const FAQS = [
 export default function SupportPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [form, setForm] = useState({ subject: '', message: '' });
+  const [errors, setErrors] = useState({ subject: '', message: '' });
+
+  function clearErr(field: keyof typeof errors) {
+    setErrors(p => ({ ...p, [field]: '' }));
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const errs = { subject: '', message: '' };
+    if (form.subject.trim().length < 5) errs.subject = 'Subject must be at least 5 characters.';
+    if (form.message.trim().length < 20) errs.message = 'Message must be at least 20 characters.';
+    if (errs.subject || errs.message) { setErrors(errs); return; }
+    setErrors({ subject: '', message: '' });
     toast.success('Support request sent! We\'ll reply within 24 hours.');
     setForm({ subject: '', message: '' });
   }
@@ -73,25 +83,32 @@ export default function SupportPage() {
         <p className="sup-form-wrap__sub">Fill out the form and our team will get back to you within 24 hours.</p>
         <form className="sup-form" onSubmit={handleSubmit}>
           <div className="sup-field">
-            <label className="sup-field__label">Subject</label>
+            <label className="sup-field__label">Subject <span style={{ color: '#FF4A2A' }}>*</span></label>
             <input
               className="sup-field__input"
               placeholder="e.g. Issue with my booking"
               value={form.subject}
-              onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
+              minLength={5}
               required
+              style={errors.subject ? { borderColor: '#FF4A2A' } : {}}
+              onChange={e => { setForm(f => ({ ...f, subject: e.target.value })); clearErr('subject'); }}
             />
+            {errors.subject && <p style={{ color: '#FF4A2A', fontSize: '0.72rem', marginTop: 4, fontWeight: 500 }}>{errors.subject}</p>}
           </div>
           <div className="sup-field">
-            <label className="sup-field__label">Message</label>
+            <label className="sup-field__label">Message <span style={{ color: '#FF4A2A' }}>*</span></label>
             <textarea
               className="sup-field__textarea"
               rows={5}
-              placeholder="Describe your issue in detail..."
+              placeholder="Describe your issue in detail... (min 20 characters)"
               value={form.message}
-              onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
+              minLength={20}
               required
+              style={errors.message ? { borderColor: '#FF4A2A' } : {}}
+              onChange={e => { setForm(f => ({ ...f, message: e.target.value })); clearErr('message'); }}
             />
+            {errors.message && <p style={{ color: '#FF4A2A', fontSize: '0.72rem', marginTop: 4, fontWeight: 500 }}>{errors.message}</p>}
+            <span style={{ fontSize: '0.72rem', color: '#8f93a8', marginTop: 2, display: 'block' }}>{form.message.length} / 20 min characters</span>
           </div>
           <button type="submit" className="sup-form__btn">Send Message</button>
         </form>

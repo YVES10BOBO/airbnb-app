@@ -218,6 +218,24 @@
 .adm-page-btn--active { background: #FF4A2A; border-color: #FF4A2A; color: #fff; }
 .adm-page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
+/* Status tabs */
+.adm-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.adm-tab {
+  padding: 7px 16px; border-radius: 20px; border: 1.5px solid #e5e5e5;
+  background: #fff; color: #666; font-size: 13px; font-weight: 600;
+  font-family: inherit; cursor: pointer; transition: all 0.15s;
+  display: flex; align-items: center; gap: 6px;
+}
+.adm-tab:hover { border-color: #FF4A2A; color: #FF4A2A; }
+.adm-tab--active { background: #FF4A2A; border-color: #FF4A2A; color: #fff; }
+.adm-tab__count {
+  background: rgba(0,0,0,0.12); color: inherit;
+  border-radius: 10px; padding: 1px 7px; font-size: 11px;
+}
+.adm-tab--active .adm-tab__count { background: rgba(255,255,255,0.25); }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
 @media (max-width: 768px) {
   .adm-sidebar { display: none; }
   .adm-main { padding: 20px 16px; }

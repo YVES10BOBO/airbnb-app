@@ -4,12 +4,14 @@ import {
   FaSearch, FaMapMarkerAlt, FaStar, FaArrowUp,
   FaUmbrellaBeach, FaMountain, FaCity, FaLeaf,
   FaHeart, FaRegHeart, FaChevronLeft, FaChevronRight,
-  FaShieldAlt, FaHeadset, FaCheckCircle,
+  FaShieldAlt, FaHeadset, FaCheckCircle, FaHandPaper,
 } from 'react-icons/fa';
 import { useStore } from '../../../store/StoreContext';
+import ListingCover from '../components/ListingCover';
 import { useListings } from '../hooks/useListings';
 import { useFavorites } from '../hooks/useFavorites';
 import { useAuth } from '../../auth/hooks/useAuth';
+import { bookingsService, messagesService } from '../../../api';
 import numeral from 'numeral';
 import './HomePage.css';
 
@@ -47,14 +49,6 @@ const TRUST_ITEMS = [
   { icon: <FaHeadset />, title: '24/7 Support', desc: 'Our team is available around the clock to assist hosts and guests alike.' },
 ];
 
-const UNIQUE_LOCATIONS = [
-  { label: 'Miami Beach, FL', img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=300&fit=crop' },
-  { label: 'Paris, France', img: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&h=300&fit=crop' },
-  { label: 'Bali, Indonesia', img: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=400&h=300&fit=crop' },
-  { label: 'Aspen, Colorado', img: 'https://images.unsplash.com/photo-1449158743715-0a90ebb6d2d8?w=400&h=300&fit=crop' },
-  { label: 'Santorini, Greece', img: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&h=300&fit=crop' },
-  { label: 'Tokyo, Japan', img: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=300&fit=crop' },
-];
 
 export default function HomePage() {
   const { state } = useStore();
@@ -91,6 +85,15 @@ export default function HomePage() {
     setFeaturedIdx((i) => dir === 'next' ? Math.min(i + 1, max) : Math.max(i - 1, 0));
   }, [topRated.length]);
 
+  const [bookingCount, setBookingCount]   = useState(0);
+  const [unreadMsgs,   setUnreadMsgs]     = useState(0);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    bookingsService.getAll().then((b) => setBookingCount(b.length)).catch(() => {});
+    messagesService.getConversations().then((c) => setUnreadMsgs(c.reduce((s, x) => s + x.unreadCount, 0))).catch(() => {});
+  }, [isAuthenticated]);
+
   const savedCount   = state.saved.length;
   const firstName    = user?.name?.split(' ')[0] ?? 'there';
   const isAdmin      = user?.role === 'admin';
@@ -107,7 +110,10 @@ export default function HomePage() {
                 {user?.name.split(' ').map(n => n[0]).join('').toUpperCase()}
               </div>
               <div>
-                <p className="hp-welcome__greeting">Welcome back 👋</p>
+                <p className="hp-welcome__greeting">
+                  <FaHandPaper className="hp-welcome__greet-icon" aria-hidden />
+                  {' '}Welcome back
+                </p>
                 <h2 className="hp-welcome__name">Hello, {firstName}!</h2>
               </div>
             </div>
@@ -118,13 +124,13 @@ export default function HomePage() {
               </div>
               <div className="hp-welcome__divider" />
               <div className="hp-welcome__stat">
-                <span className="hp-welcome__stat-val">3</span>
+                <span className="hp-welcome__stat-val">{bookingCount}</span>
                 <span className="hp-welcome__stat-label">Bookings</span>
               </div>
               <div className="hp-welcome__divider" />
               <div className="hp-welcome__stat">
-                <span className="hp-welcome__stat-val">2</span>
-                <span className="hp-welcome__stat-label">Messages</span>
+                <span className="hp-welcome__stat-val">{unreadMsgs}</span>
+                <span className="hp-welcome__stat-label">Unread</span>
               </div>
             </div>
             <div className="hp-welcome__actions">
@@ -197,7 +203,7 @@ export default function HomePage() {
             { val: `${listings.length}+`, label: 'Total Listings' },
             { val: '120+', label: 'Cities Worldwide' },
             { val: '85K+', label: 'Happy Guests' },
-            { val: '4.9★', label: 'Average Rating' },
+            { val: '4.9', label: 'Average Rating' },
           ].map((s) => (
             <div key={s.label} className="hp-stat">
               <div className="hp-stat__val">{s.val}</div>
@@ -257,7 +263,7 @@ export default function HomePage() {
               {topRated.map((l) => (
                 <div key={l.id} className="hp-featured-card" onClick={() => navigate(`/listings/${l.id}`)}>
                   <div className="hp-featured-card__img-wrap">
-                    <img src={l.img} alt={l.title} className="hp-featured-card__img" />
+                    <ListingCover url={l.img} alt={l.title} className="hp-featured-card__img" />
                     <button
                       className={`hp-featured-card__heart ${isSaved(l.id) ? 'hp-featured-card__heart--active' : ''}`}
                       onClick={(e) => { e.stopPropagation(); toggle(l.id, l.title); }}
@@ -321,23 +327,44 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Explore Destinations ── */}
+      {/* ── Available Listings preview ── */}
       <section className="hp-section hp-section--gray">
         <div className="hp-section__head">
-          <p className="hp-section__sub">Destinations</p>
-          <h2 className="hp-section__title">Explore <em>Top Destinations</em></h2>
-          <p className="hp-section__desc">From tropical islands to alpine escapes — your next adventure is waiting.</p>
+          <p className="hp-section__sub">Available Now</p>
+          <h2 className="hp-section__title">Browse <em>Latest Listings</em></h2>
+          <p className="hp-section__desc">Fresh picks ready to book — explore and find your next stay.</p>
         </div>
-        <div className="hp-destinations">
-          {UNIQUE_LOCATIONS.map((loc) => (
-            <Link key={loc.label} to="/listings" className="hp-dest-card">
-              <img src={loc.img} alt={loc.label} className="hp-dest-card__img" />
-              <div className="hp-dest-card__overlay">
-                <FaMapMarkerAlt className="hp-dest-card__pin" />
-                <span className="hp-dest-card__label">{loc.label}</span>
+        <div className="hp-preview-grid">
+          {listings.filter((l) => l.available).slice(0, 6).map((l) => (
+            <div key={l.id} className="hp-preview-card" onClick={() => navigate(`/listings/${l.id}`)}>
+              <div className="hp-preview-card__img-wrap">
+                <ListingCover url={l.img} alt={l.title} className="hp-preview-card__img" />
+                <button
+                  className={`hp-featured-card__heart ${isSaved(l.id) ? 'hp-featured-card__heart--active' : ''}`}
+                  onClick={(e) => { e.stopPropagation(); toggle(l.id, l.title); }}
+                >
+                  {isSaved(l.id) ? <FaHeart /> : <FaRegHeart />}
+                </button>
               </div>
-            </Link>
+              <div className="hp-preview-card__body">
+                <div className="hp-preview-card__top">
+                  <h3 className="hp-preview-card__title">{l.title}</h3>
+                  <div className="hp-preview-card__rating">
+                    <FaStar className="hp-featured-card__star" />
+                    <span>{l.rating > 0 ? l.rating.toFixed(1) : 'New'}</span>
+                  </div>
+                </div>
+                <p className="hp-preview-card__loc"><FaMapMarkerAlt className="hp-featured-card__pin" />{l.location}</p>
+                <div className="hp-preview-card__footer">
+                  <span className="hp-featured-card__price">{numeral(l.price).format('$0,0')}<span className="hp-featured-card__night"> / night</span></span>
+                  <span className="hp-preview-card__type">{l.category}</span>
+                </div>
+              </div>
+            </div>
           ))}
+        </div>
+        <div className="hp-featured-footer">
+          <Link to="/listings" className="hp-featured-footer__link">View all listings →</Link>
         </div>
       </section>
 

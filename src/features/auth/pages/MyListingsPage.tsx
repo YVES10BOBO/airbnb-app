@@ -1,22 +1,79 @@
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { FaPlus, FaEdit, FaTrash, FaEye, FaStar, FaMapMarkerAlt, FaToggleOn, FaToggleOff } from 'react-icons/fa';
-import { useStore } from '../../../store/StoreContext';
+import { FaPlus, FaEdit, FaTrash, FaEye, FaStar, FaMapMarkerAlt } from 'react-icons/fa';
+import axios from 'axios';
+import toast from 'react-hot-toast';
+import { useAuth } from '../hooks/useAuth';
+import { listingsService } from '../../../api';
+import ListingCover from '../../listings/components/ListingCover';
+import type { ApiListing } from '../../../api/types';
 import './MyListingsPage.css';
 
+type HostListing = ApiListing & { _count?: { bookings?: number } };
+
+function mapType(type: ApiListing['type']): string {
+  switch (type) {
+    case 'VILLA': return 'beach';
+    case 'CABIN': return 'mountain';
+    case 'HOUSE': return 'countryside';
+    default: return 'city';
+  }
+}
+
+function getApiErrorMessage(err: unknown): string {
+  if (axios.isAxiosError(err)) {
+    const errorText = err.response?.data?.error;
+    if (typeof errorText === 'string') return errorText;
+    if (!err.response) return 'Cannot reach server. Please try again.';
+  }
+  return 'Something went wrong. Please try again.';
+}
+
 export default function MyListingsPage() {
-  const { state } = useStore();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const statusParam = searchParams.get('status') ?? 'all';
+  const [myListings, setMyListings] = useState<HostListing[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
-  const myListings = state.listings.slice(0, 6);
+  useEffect(() => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    listingsService.getForHost(user.id)
+      .then((rows) => setMyListings(rows as HostListing[]))
+      .catch((err) => toast.error(getApiErrorMessage(err)))
+      .finally(() => setLoading(false));
+  }, [user?.id]);
 
-  const filtered = myListings.filter((l) => {
-    if (statusParam === 'active'  || statusParam === 'available') return l.available;
-    if (statusParam === 'pending')                                 return !l.available;
-    if (statusParam === 'expired')                                 return false;
-    return true;
-  });
+  const filtered = useMemo(
+    () => myListings.filter((l) => {
+      if (statusParam === 'active') return l.status === 'APPROVED';
+      if (statusParam === 'pending') return l.status === 'PENDING';
+      if (statusParam === 'expired') return l.status === 'REJECTED';
+      return true;
+    }),
+    [myListings, statusParam],
+  );
+
+  async function handleDelete(id: string, title: string): Promise<void> {
+    const confirmDelete = window.confirm(`Delete listing "${title}"? This cannot be undone.`);
+    if (!confirmDelete) return;
+    setBusyId(id);
+    try {
+      await listingsService.remove(id);
+      setMyListings((prev) => prev.filter((l) => l.id !== id));
+      toast.success('Listing deleted.');
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   function setTab(tab: string) {
     setSearchParams(tab === 'all' ? {} : { status: tab });
@@ -46,16 +103,16 @@ export default function MyListingsPage() {
           <span className="ml-summary-card__label">Total Listings</span>
         </div>
         <div className="ml-summary-card ml-summary-card--green">
-          <span className="ml-summary-card__val">{myListings.filter(l => l.available).length}</span>
-          <span className="ml-summary-card__label">Available</span>
+          <span className="ml-summary-card__val">{myListings.filter((l) => l.status === 'APPROVED').length}</span>
+          <span className="ml-summary-card__label">Approved</span>
         </div>
         <div className="ml-summary-card ml-summary-card--red">
-          <span className="ml-summary-card__val">{myListings.filter(l => !l.available).length}</span>
-          <span className="ml-summary-card__label">Booked</span>
+          <span className="ml-summary-card__val">{myListings.filter((l) => l.status === 'PENDING').length}</span>
+          <span className="ml-summary-card__label">Pending</span>
         </div>
         <div className="ml-summary-card ml-summary-card--purple">
-          <span className="ml-summary-card__val">{myListings.filter(l => l.superhost).length}</span>
-          <span className="ml-summary-card__label">Superhost</span>
+          <span className="ml-summary-card__val">{myListings.filter((l) => l.status === 'REJECTED').length}</span>
+          <span className="ml-summary-card__label">Rejected</span>
         </div>
       </div>
 
@@ -86,11 +143,25 @@ export default function MyListingsPage() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((l) => (
+            {!loading && filtered.length === 0 && (
+              <tr>
+                <td colSpan={6} className="ml-table__empty">No listings found for this tab.</td>
+              </tr>
+            )}
+            {loading && (
+              <tr>
+                <td colSpan={6} className="ml-table__empty">Loading listings...</td>
+              </tr>
+            )}
+            {!loading && filtered.map((l) => (
               <tr key={l.id} className="ml-row">
                 <td>
                   <div className="ml-row__prop">
-                    <img src={l.img} alt={l.title} className="ml-row__img" />
+                <ListingCover
+                  url={l.photos?.[0]?.url}
+                  alt={l.title}
+                  className="ml-row__img"
+                />
                     <div>
                       <p className="ml-row__title">{l.title}</p>
                       <p className="ml-row__loc"><FaMapMarkerAlt className="ml-row__pin" />{l.location}</p>
@@ -98,27 +169,41 @@ export default function MyListingsPage() {
                   </div>
                 </td>
                 <td>
-                  <span className="ml-row__cat">{l.category}</span>
+                  <span className="ml-row__cat">{mapType(l.type)}</span>
                 </td>
                 <td>
-                  <span className="ml-row__price">${l.price}</span>
+                  <span className="ml-row__price">${l.pricePerNight}</span>
                 </td>
                 <td>
-                  <span className="ml-row__rating"><FaStar className="ml-row__star" />{l.rating.toFixed(2)}</span>
+                  <span className="ml-row__rating"><FaStar className="ml-row__star" />{(l.rating ?? 0).toFixed(2)}</span>
                 </td>
                 <td>
                   <div className="ml-row__toggle">
-                    {l.available
-                      ? <><FaToggleOn className="ml-row__toggle-icon ml-row__toggle-icon--on" /><span className="ml-row__avail ml-row__avail--on">Available</span></>
-                      : <><FaToggleOff className="ml-row__toggle-icon ml-row__toggle-icon--off" /><span className="ml-row__avail ml-row__avail--off">Booked</span></>
-                    }
+                    <span className={`ml-row__avail ${
+                      l.status === 'APPROVED' ? 'ml-row__avail--on' : l.status === 'PENDING' ? 'ml-row__avail--off' : ''
+                    }`}>
+                      {l.status}
+                    </span>
                   </div>
                 </td>
                 <td>
                   <div className="ml-row__actions">
                     <button className="ml-action ml-action--view" onClick={() => navigate(`/listings/${l.id}`)} title="View"><FaEye /></button>
-                    <button className="ml-action ml-action--edit" title="Edit"><FaEdit /></button>
-                    <button className="ml-action ml-action--del" title="Delete"><FaTrash /></button>
+                    <button
+                      className="ml-action ml-action--edit"
+                      title="Edit"
+                      onClick={() => navigate(`/edit-listing/${l.id}`)}
+                    >
+                      <FaEdit />
+                    </button>
+                    <button
+                      className="ml-action ml-action--del"
+                      title="Delete"
+                      disabled={busyId === l.id}
+                      onClick={() => handleDelete(l.id, l.title)}
+                    >
+                      <FaTrash />
+                    </button>
                   </div>
                 </td>
               </tr>

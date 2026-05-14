@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { FaHeart, FaRegHeart, FaStar, FaMapMarkerAlt } from 'react-icons/fa';
 import numeral from 'numeral';
 import type { Listing } from '../types';
+import ListingCover from './ListingCover';
 import styles from './ListingCard.module.css';
 
 interface Props {
@@ -35,7 +36,7 @@ function ListingCard({ listing, saved, onToggleSave, onClick }: Props) {
       style={{ cursor: onClick ? 'pointer' : 'default' }}
     >
       <div className={styles.imageWrap}>
-        <img src={img} alt={title} className={styles.image} />
+        <ListingCover url={img} alt={title} className={styles.image} />
         <button
           className={clsx(styles.heart, saved && styles.heartActive)}
           onClick={(e) => { e.stopPropagation(); onToggleSave(); }}

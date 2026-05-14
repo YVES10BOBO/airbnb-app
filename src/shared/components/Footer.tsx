@@ -5,6 +5,7 @@ import {
   FaArrowRight, FaPhone, FaEnvelope, FaMapMarkerAlt, FaApple,
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import { apiClient } from '../../api';
 
 const SOCIALS = [
   { icon: <FaWhatsapp />, href: '#', label: 'WhatsApp' },
@@ -16,11 +17,21 @@ const SOCIALS = [
 
 export default function Footer() {
   const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  function handleSubscribe(e: React.FormEvent) {
+  async function handleSubscribe(e: React.FormEvent) {
     e.preventDefault();
-    toast.success('Subscribed successfully!');
-    setEmail('');
+    setLoading(true);
+    try {
+      await apiClient.post('/newsletter/subscribe', { email });
+      toast.success('Subscribed! Check your inbox for a welcome email.');
+      setEmail('');
+    } catch (err) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Subscription failed. Please try again.';
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -92,11 +103,11 @@ export default function Footer() {
               onChange={e => setEmail(e.target.value)}
               required
             />
-            <button type="submit" className="bg-primary border-none w-10 cursor-pointer text-white flex items-center justify-center text-sm hover:bg-primary-dark transition-all">
+            <button type="submit" disabled={loading} className="bg-primary border-none w-10 cursor-pointer text-white flex items-center justify-center text-sm hover:bg-primary-dark transition-all disabled:opacity-60">
               <FaArrowRight />
             </button>
           </form>
-          <p className="text-xs font-semibold text-white text-center mb-3">Follow the location</p>
+          <p className="text-xs font-semibold text-white text-center mb-3">Follow Us</p>
           <div className="flex gap-2.5 justify-center">
             {SOCIALS.map(s => (
               <a key={s.label} href={s.href} aria-label={s.label}

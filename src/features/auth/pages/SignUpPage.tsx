@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaApple, FaGoogle, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaApple, FaGoogle, FaEye, FaEyeSlash, FaSuitcaseRolling, FaHome } from 'react-icons/fa';
+import axios from 'axios';
 import { useAuth } from '../hooks/useAuth';
+import { getPasswordChecks, isStrongPassword, isValidEmail, isValidPhone } from '../utils/validation';
 import './LoginPage.css';
 import './SignUpPage.css';
 
@@ -10,54 +12,49 @@ export default function SignUpPage() {
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState<'guest' | 'host'>('guest');
   const [showPwd, setShowPwd] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({ name: '', email: '', phone: '', password: '' });
+  const [apiError, setApiError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const passwordChecks = getPasswordChecks(password);
 
-  function handleSubmit(e: React.FormEvent) {
+  function clearErr(field: keyof typeof fieldErrors) {
+    setFieldErrors(p => ({ ...p, [field]: '' }));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    signup(name, email, password);
-    navigate('/dashboard');
+    setApiError('');
+    const errs = { name: '', email: '', phone: '', password: '' };
+    if (name.trim().length < 2) errs.name = 'Full name must be at least 2 characters.';
+    if (!isValidEmail(email)) errs.email = 'Please enter a valid email address.';
+    if (!isValidPhone(phone)) errs.phone = 'Enter a valid phone number (e.g. +1 555 0100).';
+    if (!isStrongPassword(password)) errs.password = 'Password must meet all requirements shown below.';
+    if (errs.name || errs.email || errs.phone || errs.password) { setFieldErrors(errs); return; }
+    setFieldErrors({ name: '', email: '', phone: '', password: '' });
+    setSubmitting(true);
+    try {
+      await signup(name, email, password, phone, role);
+      navigate('/dashboard');
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const msg = err.response?.data?.error;
+        setApiError(typeof msg === 'string' ? msg : 'Registration failed');
+      } else {
+        setApiError(err instanceof Error ? err.message : 'Registration failed');
+      }
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
-    <div className="auth-split">
-      <div className="auth-split__hero">
-        <div className="auth-hero__content">
-          <h2 className="auth-hero__title">
-            Join thousands of hosts<br />and travelers today
-          </h2>
-          <p className="auth-hero__sub">
-            Create your free account and start exploring unique places to stay or list your own property.
-          </p>
-          <div className="auth-hero__art">
-            <svg viewBox="0 0 380 300" xmlns="http://www.w3.org/2000/svg" className="auth-hero__svg">
-              <ellipse cx="135" cy="285" rx="105" ry="7" fill="rgba(0,0,0,0.08)" />
-              <rect x="30" y="268" width="210" height="14" rx="7" fill="#2a2d3e" />
-              <rect x="48" y="125" width="174" height="143" rx="10" fill="#2a2d3e" />
-              <rect x="60" y="136" width="150" height="120" rx="6" fill="#edf0f8" />
-              <rect x="74" y="152" width="122" height="78" rx="8" fill="white" />
-              <circle cx="95" cy="175" r="13" fill="#e0e0e0" />
-              <rect x="115" y="167" width="68" height="7" rx="3" fill="#e0e0e0" />
-              <rect x="115" y="180" width="52" height="6" rx="3" fill="#ededed" />
-              <rect x="115" y="192" width="60" height="6" rx="3" fill="#ededed" />
-              <circle cx="195" cy="112" r="36" fill="#FF4A2A" />
-              <rect x="180" y="108" width="30" height="24" rx="4" fill="white" />
-              <path d="M186 108 V101 A9 9 0 0 1 204 101 V108" stroke="white" strokeWidth="5" fill="none" strokeLinecap="round" />
-              <circle cx="195" cy="121" r="4" fill="#FF4A2A" />
-              <rect x="193" y="121" width="4" height="7" rx="2" fill="#FF4A2A" />
-              <ellipse cx="295" cy="285" rx="28" ry="7" fill="rgba(0,0,0,0.08)" />
-              <rect x="278" y="225" width="16" height="60" rx="5" fill="#2a2d3e" />
-              <rect x="299" y="225" width="16" height="60" rx="5" fill="#2a2d3e" />
-              <path d="M263,158 C268,130 326,130 330,158 L334,228 H258 Z" fill="#FF4A2A" />
-              <rect x="284" y="107" width="22" height="24" rx="4" fill="#e8b89a" />
-              <circle cx="295" cy="92" r="27" fill="#2a2d3e" />
-              <path d="M263 175 Q232 182 200 190" stroke="#e8b89a" strokeWidth="14" fill="none" strokeLinecap="round" />
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <div className="auth-split__form">
+    <div className="auth-page">
+      <div className="auth-shell">
+        <p className="auth-shell__brand">LISTON STAYS</p>
         <div className="auth-form__inner">
           <h1 className="auth-form__title">
             Hello! Please
@@ -93,9 +90,12 @@ export default function SignUpPage() {
                 type="text"
                 placeholder="John Doe"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => { setName(e.target.value); clearErr('name'); }}
+                style={fieldErrors.name ? { borderColor: '#FF4A2A' } : {}}
+                minLength={2}
                 required
               />
+              {fieldErrors.name && <p style={{ color: '#FF4A2A', fontSize: '0.72rem', marginTop: 4, fontWeight: 500 }}>{fieldErrors.name}</p>}
             </div>
 
             <div className="auth-field">
@@ -103,10 +103,54 @@ export default function SignUpPage() {
               <input
                 className="auth-field__input"
                 type="email"
+                placeholder="you@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); clearErr('email'); }}
+                style={fieldErrors.email ? { borderColor: '#FF4A2A' } : {}}
                 required
               />
+              {fieldErrors.email && <p style={{ color: '#FF4A2A', fontSize: '0.72rem', marginTop: 4, fontWeight: 500 }}>{fieldErrors.email}</p>}
+            </div>
+
+            <div className="auth-field">
+              <label className="auth-field__label">*I want to join as</label>
+              <div className="signup-role-grid">
+                <button
+                  type="button"
+                  className={`signup-role-card ${role === 'guest' ? 'signup-role-card--active' : ''}`}
+                  onClick={() => setRole('guest')}
+                >
+                  <span className="signup-role-card__icon"><FaSuitcaseRolling /></span>
+                  <span className="signup-role-card__title">Guest</span>
+                  <span className="signup-role-card__desc">Book stays and leave reviews</span>
+                </button>
+                <button
+                  type="button"
+                  className={`signup-role-card ${role === 'host' ? 'signup-role-card--active' : ''}`}
+                  onClick={() => setRole('host')}
+                >
+                  <span className="signup-role-card__icon"><FaHome /></span>
+                  <span className="signup-role-card__title">Host</span>
+                  <span className="signup-role-card__desc">List properties and earn</span>
+                </button>
+              </div>
+              <p className="signup-role-note">
+                Admin accounts are created internally for security.
+              </p>
+            </div>
+
+            <div className="auth-field">
+              <label className="auth-field__label">*Phone</label>
+              <input
+                className="auth-field__input"
+                type="tel"
+                placeholder="+1 555 0100"
+                value={phone}
+                onChange={(e) => { setPhone(e.target.value); clearErr('phone'); }}
+                style={fieldErrors.phone ? { borderColor: '#FF4A2A' } : {}}
+                required
+              />
+              {fieldErrors.phone && <p style={{ color: '#FF4A2A', fontSize: '0.72rem', marginTop: 4, fontWeight: 500 }}>{fieldErrors.phone}</p>}
             </div>
 
             <div className="auth-field">
@@ -116,16 +160,28 @@ export default function SignUpPage() {
                   className="auth-field__input"
                   type={showPwd ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); clearErr('password'); }}
+                  style={fieldErrors.password ? { borderColor: '#FF4A2A' } : {}}
                   required
                 />
                 <button type="button" className="auth-field__eye" onClick={() => setShowPwd((v) => !v)}>
                   {showPwd ? <FaEye /> : <FaEyeSlash />}
                 </button>
               </div>
+              {fieldErrors.password && <p style={{ color: '#FF4A2A', fontSize: '0.72rem', marginTop: 4, fontWeight: 500 }}>{fieldErrors.password}</p>}
+              <ul className="password-checks">
+                <li className={passwordChecks.minLength ? 'ok' : ''}>At least 8 characters</li>
+                <li className={passwordChecks.upper ? 'ok' : ''}>One uppercase letter</li>
+                <li className={passwordChecks.lower ? 'ok' : ''}>One lowercase letter</li>
+                <li className={passwordChecks.number ? 'ok' : ''}>One number</li>
+                <li className={passwordChecks.special ? 'ok' : ''}>One special character</li>
+              </ul>
             </div>
 
-            <button type="submit" className="auth-submit">Sign Up</button>
+            {apiError && <p className="auth-form__error">{apiError}</p>}
+            <button type="submit" className="auth-submit" disabled={submitting}>
+              {submitting ? 'Creating Account...' : 'Sign Up'}
+            </button>
           </form>
 
           <div className="auth-footer">

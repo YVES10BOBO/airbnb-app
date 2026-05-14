@@ -1,5 +1,6 @@
 import { useEffect, useRef, useMemo } from 'react';
 import debounce from 'lodash/debounce';
+import { FaSearch } from 'react-icons/fa';
 import { useStore } from '../../../store/StoreContext';
 
 export default function SearchBar() {
@@ -24,7 +25,7 @@ export default function SearchBar() {
 
   return (
     <div className="search-bar">
-      <span className="search-bar__icon">🔍</span>
+      <FaSearch className="search-bar__icon" />
       <input
         ref={inputRef}
         className="search-bar__input"

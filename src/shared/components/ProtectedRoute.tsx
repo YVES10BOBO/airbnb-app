@@ -15,7 +15,8 @@ function RedirectToLogin() {
 }
 
 export default function ProtectedRoute({ children }: Props) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) return null;
   if (!isAuthenticated) return <RedirectToLogin />;
   return <>{children}</>;
 }

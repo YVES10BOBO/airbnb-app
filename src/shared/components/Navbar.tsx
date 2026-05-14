@@ -12,9 +12,20 @@ export default function Navbar() {
   const { isAuthenticated, user, logout } = useAuth();
   const { state } = useStore();
   const navigate = useNavigate();
-  const [dark, setDark] = useState(false);
+  const [dark, setDark] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    return saved === 'dark';
+  });
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    if (dark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [dark]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -27,8 +38,9 @@ export default function Navbar() {
   }, []);
 
   function toggleDark() {
-    setDark(v => !v);
-    document.documentElement.classList.toggle('dark');
+    const next = !dark;
+    setDark(next);
+    localStorage.setItem('theme', next ? 'dark' : 'light');
   }
 
   function handleLogout() {
@@ -65,13 +77,11 @@ export default function Navbar() {
         {/* ── Right side (desktop) ── */}
         <div className="hidden lg:flex items-center gap-2 shrink-0">
 
-          {/* Dark mode */}
-          <button
-            onClick={toggleDark}
-            title="Toggle dark mode"
-            className="w-9 h-9 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-primary transition-all border-none bg-transparent cursor-pointer text-base"
-          >
-            {dark ? <FaSun /> : <FaMoon />}
+          {/* Dark mode toggle */}
+          <button onClick={toggleDark} title={dark ? 'Switch to light' : 'Switch to dark'} className="theme-pill">
+            <span className="theme-pill__track">
+              <span className="theme-pill__knob">{dark ? <FaMoon /> : <FaSun />}</span>
+            </span>
           </button>
 
           {/* Saved heart */}
@@ -95,8 +105,11 @@ export default function Navbar() {
             >
               <FaBars className="text-gray-500 text-sm" />
               {isAuthenticated && user ? (
-                <span className="w-7 h-7 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">
-                  {initials}
+                <span className="w-7 h-7 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center overflow-hidden">
+                  {user.avatar
+                    ? <img src={user.avatar} alt={initials} className="w-full h-full object-cover" />
+                    : initials
+                  }
                 </span>
               ) : (
                 <FaUserCircle className="text-gray-400 text-2xl" />
@@ -151,12 +164,14 @@ export default function Navbar() {
           </div>
 
           {/* Add Listing */}
-          <NavLink
-            to="/add-listing"
-            className="flex items-center gap-2 bg-primary text-white no-underline px-4 py-2 rounded-full text-sm font-semibold hover:bg-primary-dark transition-all whitespace-nowrap shadow-sm"
-          >
-            <FaPlus className="text-xs" /> Add Listing
-          </NavLink>
+          {isAuthenticated && user?.role === 'host' && (
+            <NavLink
+              to="/add-listing"
+              className="flex items-center gap-2 bg-primary text-white no-underline px-4 py-2 rounded-full text-sm font-semibold hover:bg-primary-dark transition-all whitespace-nowrap"
+            >
+              <FaPlus className="text-xs" /> Add Listing
+            </NavLink>
+          )}
         </div>
 
         {/* ── Mobile right ── */}
@@ -177,8 +192,11 @@ export default function Navbar() {
             >
               {mobileOpen ? <FaTimes className="text-gray-500 text-sm" /> : <FaBars className="text-gray-500 text-sm" />}
               {isAuthenticated && user ? (
-                <span className="w-7 h-7 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">
-                  {initials}
+                <span className="w-7 h-7 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center overflow-hidden">
+                  {user.avatar
+                    ? <img src={user.avatar} alt={initials} className="w-full h-full object-cover" />
+                    : initials
+                  }
                 </span>
               ) : (
                 <FaUserCircle className="text-gray-400 text-2xl" />
@@ -211,9 +229,11 @@ export default function Navbar() {
 
                 {/* Actions */}
                 <div className="p-3 flex flex-col gap-2">
-                  <NavLink to="/add-listing" className="flex items-center justify-center gap-2 bg-primary text-white no-underline py-2.5 rounded-full text-sm font-semibold hover:bg-primary-dark transition-all" onClick={() => setMobileOpen(false)}>
-                    <FaPlus className="text-xs" /> Add Listing
-                  </NavLink>
+                  {isAuthenticated && user?.role === 'host' && (
+                    <NavLink to="/add-listing" className="flex items-center justify-center gap-2 bg-primary text-white no-underline py-2.5 rounded-full text-sm font-semibold hover:bg-primary-dark transition-all" onClick={() => setMobileOpen(false)}>
+                      <FaPlus className="text-xs" /> Add Listing
+                    </NavLink>
+                  )}
                   {isAuthenticated ? (
                     <button onClick={handleLogout} className="flex items-center justify-center gap-2 py-2.5 rounded-full text-sm font-semibold text-gray-600 bg-gray-100 border-none cursor-pointer font-sans hover:bg-gray-200 transition-all">
                       <FaSignOutAlt className="text-xs" /> Sign Out
@@ -223,8 +243,13 @@ export default function Navbar() {
                       <FaSignInAlt className="text-xs" /> Sign In
                     </NavLink>
                   )}
-                  <button onClick={() => { toggleDark(); }} className="flex items-center justify-center gap-2 py-2 text-sm text-gray-500 bg-transparent border-none cursor-pointer font-sans">
-                    {dark ? <><FaSun className="text-xs" /> Light mode</> : <><FaMoon className="text-xs" /> Dark mode</>}
+                  <button onClick={toggleDark} className="flex items-center justify-center gap-3 py-2 text-sm text-gray-500 bg-transparent border-none cursor-pointer font-sans">
+                    <span className="theme-pill theme-pill--sm">
+                      <span className="theme-pill__track">
+                        <span className="theme-pill__knob">{dark ? <FaMoon /> : <FaSun />}</span>
+                      </span>
+                    </span>
+                    {dark ? 'Light mode' : 'Dark mode'}
                   </button>
                 </div>
               </div>

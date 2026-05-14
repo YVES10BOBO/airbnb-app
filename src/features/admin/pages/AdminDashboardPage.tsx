@@ -1,36 +1,74 @@
 import { FaUsers, FaList, FaCalendarAlt, FaDollarSign, FaArrowUp, FaArrowDown } from 'react-icons/fa';
 import './AdminDashboardPage.css';
+import { useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
+import { bookingsService, listingsService, usersService } from '../../../api';
+import type { ApiBooking, ApiListing, ApiUser } from '../../../api/types';
 
-const STATS = [
-  { icon: <FaUsers />,       iconBg: '#dbeafe', iconColor: '#1d4ed8', label: 'Total Users',    value: '1,248',  change: '+12%',  up: true  },
-  { icon: <FaList />,        iconBg: '#dcfce7', iconColor: '#166534', label: 'Total Listings', value: '342',    change: '+8%',   up: true  },
-  { icon: <FaCalendarAlt />, iconBg: '#fff3e0', iconColor: '#c2410c', label: 'Total Bookings', value: '5,670',  change: '+23%',  up: true  },
-  { icon: <FaDollarSign />,  iconBg: '#fef9c3', iconColor: '#854d0e', label: 'Total Revenue',  value: '$94,200',change: '-2%',   up: false },
-];
-
-const RECENT_USERS = [
-  { id: 1, name: 'Emma Johnson',  email: 'emma@example.com',   role: 'guest', joined: 'May 8, 2026',  color: '#7c3aed' },
-  { id: 2, name: 'Marcus Lee',    email: 'marcus@example.com',  role: 'host',  joined: 'May 7, 2026',  color: '#0284c7' },
-  { id: 3, name: 'Sophia Patel',  email: 'sophia@example.com',  role: 'guest', joined: 'May 6, 2026',  color: '#FF4A2A' },
-  { id: 4, name: 'David Kim',     email: 'david@example.com',   role: 'host',  joined: 'May 5, 2026',  color: '#16a34a' },
-  { id: 5, name: 'Laila Osman',   email: 'laila@example.com',   role: 'guest', joined: 'May 4, 2026',  color: '#d97706' },
-];
-
-const RECENT_BOOKINGS = [
-  { id: 1, listing: 'Luxury Beach Villa',    guest: 'Emma Johnson',  amount: '$2,250', status: 'approved',  date: 'Jun 10 – 15' },
-  { id: 2, listing: 'Cozy Mountain Cabin',   guest: 'Marcus Lee',    amount: '$740',   status: 'pending',   date: 'Jul 1 – 5'   },
-  { id: 3, listing: 'Modern Downtown Apt',   guest: 'Sophia Patel',  amount: '$480',   status: 'pending',   date: 'Aug 14 – 18' },
-  { id: 4, listing: 'Seaside Cottage',       guest: 'David Kim',     amount: '$2,170', status: 'approved',  date: 'Aug 20 – 27' },
-  { id: 5, listing: 'Alpine Ski Chalet',     guest: 'Laila Osman',   amount: '$3,200', status: 'cancelled', date: 'Sep 5 – 10'  },
-];
+type DashboardBooking = ApiBooking & {
+  listing?: { title?: string };
+  guest?: { name?: string };
+};
 
 const STATUS_STYLE: Record<string, string> = {
-  approved:  'adm-badge adm-badge--approved',
-  pending:   'adm-badge adm-badge--pending',
-  cancelled: 'adm-badge adm-badge--banned',
+  CONFIRMED: 'adm-badge adm-badge--approved',
+  PENDING: 'adm-badge adm-badge--pending',
+  CANCELLED: 'adm-badge adm-badge--banned',
 };
 
 export default function AdminDashboardPage() {
+  const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState<ApiUser[]>([]);
+  const [listings, setListings] = useState<ApiListing[]>([]);
+  const [bookings, setBookings] = useState<DashboardBooking[]>([]);
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      usersService.getAll(),
+      listingsService.adminGetAll({ limit: 200 }).then((res) => res.data),
+      bookingsService.getAll().then((rows) => rows as DashboardBooking[]),
+    ])
+      .then(([usersRows, listingRows, bookingRows]) => {
+        setUsers(usersRows);
+        setListings(listingRows);
+        setBookings(bookingRows);
+      })
+      .catch(() => toast.error('Failed to load dashboard data.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const totalRevenue = useMemo(
+    () => bookings.filter((b) => b.status === 'CONFIRMED').reduce((sum, booking) => sum + booking.totalPrice, 0),
+    [bookings],
+  );
+
+  const stats = [
+    { icon: <FaUsers />, iconBg: '#dbeafe', iconColor: '#1d4ed8', label: 'Total Users', value: users.length.toLocaleString() },
+    { icon: <FaList />, iconBg: '#dcfce7', iconColor: '#166534', label: 'Total Listings', value: listings.length.toLocaleString() },
+    { icon: <FaCalendarAlt />, iconBg: '#fff3e0', iconColor: '#c2410c', label: 'Total Bookings', value: bookings.length.toLocaleString() },
+    { icon: <FaDollarSign />, iconBg: '#fef9c3', iconColor: '#854d0e', label: 'Total Revenue', value: `$${totalRevenue.toLocaleString()}` },
+  ];
+
+  const recentUsers = [...users]
+    .sort((a, b) => +new Date(b.createdAt ?? 0) - +new Date(a.createdAt ?? 0))
+    .slice(0, 5);
+  const recentBookings = [...bookings]
+    .sort((a, b) => +new Date(b.createdAt ?? 0) - +new Date(a.createdAt ?? 0))
+    .slice(0, 5);
+
+  function avatarColor(id: string): string {
+    const colors = ['#7c3aed', '#0284c7', '#FF4A2A', '#16a34a', '#d97706', '#9333ea', '#0891b2', '#dc2626'];
+    const seed = id.split('').reduce((sum, c) => sum + c.charCodeAt(0), 0);
+    return colors[seed % colors.length] ?? '#FF4A2A';
+  }
+
+  function roleToLocal(role: ApiUser['role']): 'admin' | 'host' | 'guest' {
+    if (role === 'ADMIN') return 'admin';
+    if (role === 'HOST') return 'host';
+    return 'guest';
+  }
+
   return (
     <div>
       <div className="adm-page__header">
@@ -40,7 +78,7 @@ export default function AdminDashboardPage() {
 
       {/* Stats */}
       <div className="adm-stats">
-        {STATS.map((s, i) => (
+        {stats.map((s, i) => (
           <div key={i} className="adm-stat-card">
             <div className="adm-stat-card__icon" style={{ background: s.iconBg, color: s.iconColor }}>
               {s.icon}
@@ -48,8 +86,8 @@ export default function AdminDashboardPage() {
             <div className="adm-stat-card__body">
               <p className="adm-stat-card__label">{s.label}</p>
               <p className="adm-stat-card__value">{s.value}</p>
-              <span className={`adm-stat-card__change ${s.up ? 'adm-stat-card__change--up' : 'adm-stat-card__change--down'}`}>
-                {s.up ? <FaArrowUp /> : <FaArrowDown />} {s.change} this month
+              <span className={`adm-stat-card__change ${loading ? 'adm-stat-card__change--down' : 'adm-stat-card__change--up'}`}>
+                {loading ? <FaArrowDown /> : <FaArrowUp />} {loading ? 'Loading...' : 'Live API'}
               </span>
             </div>
           </div>
@@ -72,21 +110,22 @@ export default function AdminDashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {RECENT_USERS.map(u => (
+              {recentUsers.map((u) => (
                 <tr key={u.id}>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div className="adm-avatar" style={{ background: u.color }}>
+                      <div className="adm-avatar" style={{ background: avatarColor(u.id) }}>
                         {u.name.split(' ').map(n => n[0]).join('')}
                       </div>
                       <span style={{ fontWeight: 600, color: '#111' }}>{u.name}</span>
                     </div>
                   </td>
                   <td style={{ color: '#888' }}>{u.email}</td>
-                  <td><span className={`adm-badge adm-badge--${u.role}`}>{u.role}</span></td>
-                  <td style={{ color: '#aaa', fontSize: 12 }}>{u.joined}</td>
+                  <td><span className={`adm-badge adm-badge--${roleToLocal(u.role)}`}>{roleToLocal(u.role)}</span></td>
+                  <td style={{ color: '#aaa', fontSize: 12 }}>{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}</td>
                 </tr>
               ))}
+              {!loading && recentUsers.length === 0 && <tr><td colSpan={4} className="adm-table__empty">No users found.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -106,17 +145,20 @@ export default function AdminDashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {RECENT_BOOKINGS.map(b => (
+              {recentBookings.map((b) => (
                 <tr key={b.id}>
                   <td>
-                    <p style={{ fontWeight: 600, color: '#111', margin: 0 }}>{b.listing}</p>
-                    <p style={{ fontSize: 11, color: '#aaa', margin: 0 }}>{b.date}</p>
+                    <p style={{ fontWeight: 600, color: '#111', margin: 0 }}>{b.listing?.title ?? '—'}</p>
+                    <p style={{ fontSize: 11, color: '#aaa', margin: 0 }}>
+                      {new Date(b.checkIn).toLocaleDateString()} - {new Date(b.checkOut).toLocaleDateString()}
+                    </p>
                   </td>
-                  <td style={{ color: '#555' }}>{b.guest}</td>
-                  <td style={{ fontWeight: 700, color: '#FF4A2A' }}>{b.amount}</td>
+                  <td style={{ color: '#555' }}>{b.guest?.name ?? '—'}</td>
+                  <td style={{ fontWeight: 700, color: '#FF4A2A' }}>${b.totalPrice.toLocaleString()}</td>
                   <td><span className={STATUS_STYLE[b.status]}>{b.status}</span></td>
                 </tr>
               ))}
+              {!loading && recentBookings.length === 0 && <tr><td colSpan={4} className="adm-table__empty">No bookings found.</td></tr>}
             </tbody>
           </table>
         </div>

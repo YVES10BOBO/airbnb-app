@@ -1,270 +1,549 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
+import axios from 'axios';
 import {
   FaStar, FaMapMarkerAlt, FaArrowLeft, FaHeart, FaRegHeart,
   FaShareAlt, FaChevronLeft, FaChevronRight, FaThumbsUp,
   FaTv, FaBath, FaTree, FaVideo, FaSwimmer, FaWifi,
   FaFire, FaDumbbell, FaUtensils, FaParking, FaHome,
-  FaClock, FaExpand, FaSearch,
+  FaTh, FaSearch, FaUsers, FaChevronDown, FaChevronLeft as FaChevLeft, FaChevronRight as FaChevRight, FaTimes as FaX,
+  FaImage, FaSnowflake, FaSwimmingPool, FaTshirt, FaWater, FaCheckCircle, FaUserCircle, FaCommentDots,
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { useStore } from '../../../store/StoreContext';
 import { useFavorites } from '../hooks/useFavorites';
+import { useAuth } from '../../auth/hooks/useAuth';
+import { listingsService, reviewsService, messagesService } from '../../../api';
+import type { ApiReview } from '../../../api/types';
+import type { Listing } from '../types';
+import { mapApiListingToListing } from '../utils/mapApiListing';
+import ListingCover from '../components/ListingCover';
+import Spinner from '../../../shared/components/Spinner';
 import './ListingDetail.css';
 
-const AMENITIES = [
-  { icon: <FaTv />, label: 'Television' },
-  { icon: <FaBath />, label: 'Jacuzzi' },
-  { icon: <FaTree />, label: 'Garden' },
-  { icon: <FaVideo />, label: 'Security cameras' },
-  { icon: <FaSwimmer />, label: 'Shared Pool' },
-  { icon: <FaWifi />, label: 'Wi-fi' },
-  { icon: <FaFire />, label: 'Heater' },
-  { icon: <FaDumbbell />, label: 'Gym (100m²)' },
-  { icon: <FaUtensils />, label: 'Kitchen Appliances' },
-  { icon: <FaParking />, label: 'Covered Parking' },
-  { icon: <FaHome />, label: 'Furnished' },
-];
+function amenityIcon(label: string): React.ReactNode {
+  const t = label.toLowerCase();
+  if (t.includes('wifi')) return <FaWifi />;
+  if (t.includes('kitchen')) return <FaUtensils />;
+  if (t.includes('parking')) return <FaParking />;
+  if (t.includes('pool')) return <FaSwimmingPool />;
+  if (t.includes('fire')) return <FaFire />;
+  if (t.includes('tv')) return <FaTv />;
+  if (t.includes('air') || t.includes('ac')) return <FaSnowflake />;
+  if (t.includes('gym')) return <FaDumbbell />;
+  if (t.includes('washer') || t.includes('dryer')) return <FaTshirt />;
+  if (t.includes('hot tub') || t.includes('tub')) return <FaWater />;
+  if (t.includes('bath') || t.includes('jacuzzi')) return <FaBath />;
+  if (t.includes('garden') || t.includes('yard')) return <FaTree />;
+  if (t.includes('camera') || t.includes('security')) return <FaVideo />;
+  if (t.includes('swim')) return <FaSwimmer />;
+  return <FaCheckCircle />;
+}
 
-const HOURS = [
-  { day: 'Monday', time: '8:00 am - 6:00 pm' },
-  { day: 'Tuesday', time: '8:00 am - 6:00 pm' },
-  { day: 'Wednesday', time: '8:00 am - 6:00 pm' },
-  { day: 'Thursday', time: '8:00 am - 6:00 pm' },
-  { day: 'Friday', time: '8:00 am - 6:00 pm' },
-  { day: 'Saturday', time: '8:00 am - 6:00 pm' },
-  { day: 'Sunday', time: 'Close', closed: true },
-];
-
-const MOCK_REVIEWS = [
-  {
-    id: 1, name: 'Sarah Mitchell', date: 'Oct 2025 at 12:27 pm', rating: 4, helpful: 16,
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=60&h=60&fit=crop',
-    text: 'Absolutely stunning place! The views were breathtaking and the host was incredibly welcoming. Every detail was thought through and the amenities were top-notch. Would definitely return.',
-  },
-  {
-    id: 2, name: 'Pranoti Deshpande', date: 'Oct 2025 at 12:27 pm', rating: 4, helpful: 16,
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&h=60&fit=crop',
-    text: 'There are many beautiful places to visit but this one stands out. The location is perfect and the property is exactly as described. Highly recommend to anyone visiting this area.',
-  },
-  {
-    id: 3, name: 'Marcus Knight', date: 'Oct 2025 at 12:27 pm', rating: 4, helpful: 16,
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=60&h=60&fit=crop',
-    text: 'This is some content from a wonderful stay. You can replace your expectations with reality and enjoy the outstanding experience this property offers.',
-  },
-];
-
-const THUMB2: Record<string, string> = {
-  beach: 'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=400&h=220&fit=crop',
-  mountain: 'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=400&h=220&fit=crop',
-  city: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=220&fit=crop',
-  countryside: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=400&h=220&fit=crop',
-};
+function reviewErrorMessage(err: unknown): string {
+  if (axios.isAxiosError(err)) {
+    const msg = err.response?.data?.error;
+    if (typeof msg === 'string') return msg;
+  }
+  return 'Could not submit review.';
+}
 
 export default function ListingDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { state } = useStore();
+  const { state, dispatch } = useStore();
   const { isSaved, toggle } = useFavorites();
+  const { user } = useAuth();
 
-  const [bookName, setBookName] = useState('');
-  const [bookEmail, setBookEmail] = useState('');
-  const [bookComment, setBookComment] = useState('');
-  const [cName, setCName] = useState('');
-  const [cEmail, setCEmail] = useState('');
-  const [cText, setCText] = useState('');
+  const [listing, setListing] = useState<Listing | null>(null);
+  const [hostId, setHostId] = useState<string | null>(null);
+  const [contactingHost, setContactingHost] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(true);
+  const [detailError, setDetailError] = useState(false);
+  const [reviews, setReviews] = useState<ApiReview[]>([]);
+  const [reviewTotal, setReviewTotal] = useState(0);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+
+  const [checkIn, setCheckIn] = useState('');
+  const [checkOut, setCheckOut] = useState('');
+  const [guests, setGuests] = useState(1);
+  const [guestOpen, setGuestOpen] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
   const [simPage, setSimPage] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIdx, setLightboxIdx] = useState(0);
 
-  const listing = state.listings.find((l) => l.id === Number(id));
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    setDetailLoading(true);
+    setDetailError(false);
 
-  if (!listing) {
+    (async () => {
+      try {
+        const [apiListing, catalogRes, reviewsRes] = await Promise.all([
+          listingsService.getById(id),
+          listingsService.getAll({ limit: 100 }),
+          reviewsService.getForListing(id, { limit: 30 }),
+        ]);
+        if (cancelled) return;
+        const mapped = mapApiListingToListing(apiListing);
+        setListing(mapped);
+        setHostId((apiListing.host as any)?.id ?? null);
+        dispatch({ type: 'UPSERT_LISTING', payload: mapped });
+        dispatch({ type: 'SET_LISTINGS', payload: catalogRes.data.map(mapApiListingToListing) });
+        setReviews(reviewsRes.data);
+        setReviewTotal(reviewsRes.meta.total);
+      } catch {
+        if (!cancelled) {
+          setDetailError(true);
+          setListing(null);
+        }
+      } finally {
+        if (!cancelled) setDetailLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, dispatch]);
+
+  const saved = listing ? isSaved(listing.id) : false;
+
+  const similar = useMemo(() => {
+    if (!listing) return [];
+    return state.listings
+      .filter((l) => l.category === listing.category && l.id !== listing.id)
+      .slice(0, 4);
+  }, [listing, state.listings]);
+
+  const pricing = useMemo(() => {
+    if (!listing) return [];
+    return [
+      { name: 'Standard Night Stay', sub: `${listing.category} / Weekday / Peak Season`, price: listing.price },
+      { name: 'Weekend Package', sub: 'Fri–Sun / Breakfast Included', price: Math.round(listing.price * 1.2), badge: 'New' },
+      { name: 'Extended Stay (7+ nights)', sub: 'Weekly Rate / Best Value', price: Math.round(listing.price * 0.85), badge: 'Recommended' },
+      { name: 'Last Minute Deal', sub: 'Available Now / Limited Slots', price: Math.round(listing.price * 0.75) },
+      { name: 'Holiday Premium', sub: 'Holiday Season / All Inclusive', price: Math.round(listing.price * 1.5) },
+    ];
+  }, [listing]);
+
+  const nights = useMemo(() => {
+    if (!checkIn || !checkOut) return 0;
+    const diff = dayjs(checkOut).diff(dayjs(checkIn), 'day');
+    return diff > 0 ? diff : 0;
+  }, [checkIn, checkOut]);
+
+  const cleaningFee = listing ? Math.round(listing.price * 0.15) : 0;
+  const serviceFee = listing ? Math.round(listing.price * nights * 0.12) : 0;
+  const subtotal = listing ? listing.price * nights : 0;
+  const total = subtotal + cleaningFee + serviceFee;
+
+  const todayStr = dayjs().format('YYYY-MM-DD');
+  const minCheckOut = checkIn
+    ? dayjs(checkIn).add(1, 'day').format('YYYY-MM-DD')
+    : dayjs().add(1, 'day').format('YYYY-MM-DD');
+
+  const rawPhotoUrls = useMemo(() => {
+    if (!listing) return [];
+    if (listing.photoUrls.length > 0) return listing.photoUrls;
+    if (listing.img) return [listing.img];
+    return [];
+  }, [listing]);
+
+  function sizeHeroUrl(url: string): string {
+    if (url.includes('res.cloudinary.com') && url.includes('/upload/')) {
+      return url.replace('/upload/', '/upload/w_1200,h_700,c_fill,f_auto,q_auto/');
+    }
+    const base = url.split('?')[0];
+    return `${base}?w=1200&h=700&fit=crop`;
+  }
+
+  const photos = useMemo(
+    () => rawPhotoUrls.map((u, i) => (i === 0 ? sizeHeroUrl(u) : u)),
+    [rawPhotoUrls],
+  );
+  const thumbPhotos = photos.slice(1, 5);
+
+  const closeLightbox = useCallback(() => setLightboxOpen(false), []);
+  const prevPhoto = useCallback(
+    () => setLightboxIdx((i) => (i - 1 + photos.length) % photos.length),
+    [photos.length],
+  );
+  const nextPhoto = useCallback(
+    () => setLightboxIdx((i) => (i + 1) % photos.length),
+    [photos.length],
+  );
+
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowLeft') prevPhoto();
+      if (e.key === 'ArrowRight') nextPhoto();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [lightboxOpen, closeLightbox, prevPhoto, nextPhoto]);
+
+  function handleReserve() {
+    if (!listing) return;
+    if (!checkIn || !checkOut) {
+      toast.error('Please select your check-in and check-out dates.');
+      return;
+    }
+    if (nights === 0) {
+      toast.error('Check-out must be after check-in.');
+      return;
+    }
+    navigate(`/checkout?listing=${listing.id}&checkIn=${checkIn}&checkOut=${checkOut}&guests=${guests}`);
+  }
+
+  async function handleContactHost() {
+    if (!user) { navigate('/login'); return; }
+    if (!hostId) return;
+    if (user.id === hostId) { toast.error("You can't message your own listing."); return; }
+    setContactingHost(true);
+    try {
+      await messagesService.getOrCreateConversation(hostId);
+      navigate('/dashboard/messages');
+    } catch {
+      toast.error('Could not open chat. Please try again.');
+    } finally {
+      setContactingHost(false);
+    }
+  }
+
+  async function handleReviewSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!id || !listing) return;
+    if (!user) {
+      toast.error('Please log in as a guest to leave a review.');
+      navigate('/login');
+      return;
+    }
+    if (user.role === 'host') {
+      toast.error('Hosts cannot review their own or other listings.');
+      return;
+    }
+    const trimmed = reviewComment.trim();
+    if (trimmed.length < 4) {
+      toast.error('Please write a short comment (at least 4 characters).');
+      return;
+    }
+    setReviewSubmitting(true);
+    try {
+      const created = await reviewsService.create(id, { rating: reviewRating, comment: trimmed });
+      setReviews((prev) => [created, ...prev]);
+      setReviewTotal((t) => t + 1);
+      setReviewComment('');
+      setReviewRating(5);
+      toast.success('Thanks — your review was posted.');
+    } catch (err) {
+      toast.error(reviewErrorMessage(err));
+    } finally {
+      setReviewSubmitting(false);
+    }
+  }
+
+  const maxG = listing?.maxGuests ?? 8;
+  const guestOptions = useMemo(() => Array.from({ length: maxG }, (_, i) => i + 1), [maxG]);
+
+  useEffect(() => {
+    if (!listing) return;
+    const cap = listing.maxGuests ?? 8;
+    setGuests((g) => (g > cap ? cap : g));
+  }, [listing]);
+
+  if (!id) {
     return (
       <div className="detail-not-found">
-        <p>Listing not found.</p>
-        <button className="btn btn--active" onClick={() => navigate('/')}>Back to listings</button>
+        <p>Invalid listing link.</p>
+        <button type="button" className="btn btn--active" onClick={() => navigate('/')}>Back to home</button>
       </div>
     );
   }
 
-  const saved = isSaved(listing.id);
-  const reviewCount = Math.floor(listing.rating * 487 + 12);
-  const bookmarks = (reviewCount % 80) + 20;
-  const similar = state.listings.filter((l) => l.category === listing.category && l.id !== listing.id).slice(0, 4);
-
-  const pricing = [
-    { name: 'Standard Night Stay', sub: listing.category + ' / Weekday / Peak Season', price: listing.price },
-    { name: 'Weekend Package', sub: 'Fri–Sun / Breakfast Included', price: Math.round(listing.price * 1.2), badge: 'New' },
-    { name: 'Extended Stay (7+ nights)', sub: 'Weekly Rate / Best Value', price: Math.round(listing.price * 0.85), badge: 'Recommended' },
-    { name: 'Last Minute Deal', sub: 'Available Now / Limited Slots', price: Math.round(listing.price * 0.75) },
-    { name: 'Holiday Premium', sub: 'Holiday Season / All Inclusive', price: Math.round(listing.price * 1.5) },
-  ];
-
-  function handleBook(e: React.FormEvent) {
-    e.preventDefault();
-    toast.success('Booking request sent!');
-    setBookName(''); setBookEmail(''); setBookComment('');
+  if (detailLoading) {
+    return (
+      <div className="ld-page ld-page--center">
+        <Spinner />
+      </div>
+    );
   }
 
-  function handleComment(e: React.FormEvent) {
-    e.preventDefault();
-    toast.success('Comment submitted!');
-    setCName(''); setCEmail(''); setCText('');
+  if (detailError || !listing) {
+    return (
+      <div className="detail-not-found">
+        <p>Listing not found.</p>
+        <button type="button" className="btn btn--active" onClick={() => navigate('/')}>Back to listings</button>
+      </div>
+    );
   }
 
-  const thumb1 = listing.img.includes('?') ? listing.img.split('?')[0] + '?w=400&h=220&fit=crop' : listing.img;
-  const thumb2 = THUMB2[listing.category] ?? THUMB2.city;
-  const mainImg = listing.img.includes('?') ? listing.img.split('?')[0] + '?w=900&h=480&fit=crop' : listing.img;
+  const displayRating = listing.rating > 0;
+  const roundedStars = displayRating ? Math.round(listing.rating) : 0;
 
   return (
     <div className="ld-page">
 
-      {/* ── Top bar ── */}
       <div className="ld-topbar">
         <div className="ld-topbar__left">
-          <button className="ld-back-btn" onClick={() => navigate(-1)} title="Go back">
+          <button type="button" className="ld-back-btn" onClick={() => navigate(-1)} title="Go back">
             <FaArrowLeft />
           </button>
-          <button
-            className={`ld-save-btn${saved ? ' ld-save-btn--active' : ''}`}
-            onClick={() => toggle(listing.id, listing.title)}
-          >
-            {saved ? <FaHeart /> : <FaRegHeart />} Save this listing
-          </button>
-          <span className="ld-topbar__bookmarks">people bookmarked this place {bookmarks}</span>
-        </div>
-
-        <div className="ld-topbar__right">
           <h1 className="ld-title">{listing.title}</h1>
           <div className="ld-meta-row">
-            <span className="ld-meta-reviews">reviews {reviewCount.toLocaleString()}</span>
-            <span className="ld-meta-rating">({listing.rating.toFixed(1)})</span>
             <span className="ld-stars-row">
               {Array.from({ length: 5 }, (_, i) => (
-                <FaStar key={i} className={i < Math.round(listing.rating) ? 'ld-star--on' : 'ld-star--off'} />
+                <FaStar key={i} className={i < roundedStars ? 'ld-star--on' : 'ld-star--off'} />
               ))}
             </span>
-            <FaShareAlt className="ld-share-icon" />
+            {displayRating ? (
+              <>
+                <span className="ld-meta-rating">{listing.rating.toFixed(1)}</span>
+                <span className="ld-sep">·</span>
+              </>
+            ) : (
+              <span className="ld-meta-rating ld-meta-rating--muted">New listing</span>
+            )}
+            <span className="ld-meta-reviews">{reviewTotal} reviews</span>
+            <span className="ld-sep">·</span>
             <span className="ld-meta-cat">{listing.category}</span>
-            <span className="ld-sep">/</span>
           </div>
           <div className="ld-info-row">
-            <span className="ld-info-type">{listing.available ? 'Full time' : 'Unavailable'}</span>
             <FaMapMarkerAlt className="ld-pin-icon" />
             <span className="ld-info-loc">{listing.location}</span>
-            <span className="ld-sep">/</span>
+            <span className="ld-sep">·</span>
+            <span className="ld-info-type">{listing.available ? 'Available' : 'Unavailable'}</span>
+            <span className="ld-sep">·</span>
             <span className="ld-info-posted">
-              Posted {dayjs().diff(dayjs(listing.availableFrom), 'day') < 2
+              Listed {dayjs().diff(dayjs(listing.availableFrom), 'day') < 2
                 ? '1 day ago'
                 : dayjs(listing.availableFrom).format('MMM D, YYYY')}
             </span>
-            <span className="ld-sep">/</span>
           </div>
+        </div>
+
+        <div className="ld-topbar__right">
+          <button
+            type="button"
+            className={`ld-save-btn${saved ? ' ld-save-btn--active' : ''}`}
+            onClick={() => toggle(listing.id, listing.title)}
+          >
+            {saved ? <FaHeart /> : <FaRegHeart />} Save
+          </button>
+          <button type="button" className="ld-share-btn"><FaShareAlt /> Share</button>
         </div>
       </div>
 
-      {/* ── Photo gallery ── */}
-      <div className="ld-gallery">
-        <div className="ld-gallery__left">
-          <img src={thumb1} alt={listing.title} className="ld-gallery__thumb" />
-          <div className="ld-gallery__thumb-wrap">
-            <img src={thumb2} alt="interior" className="ld-gallery__thumb" />
-            <button className="ld-view-photos-btn">
-              <FaExpand /> View photos
-            </button>
+      <div
+        className={`ld-gallery${photos.length === 0 ? ' ld-gallery--empty' : ''}${photos.length === 1 ? ' ld-gallery--single' : ''}`}
+      >
+        <div
+          className="ld-gallery__hero"
+          onClick={() => {
+            if (photos.length === 0) return;
+            setLightboxIdx(0);
+            setLightboxOpen(true);
+          }}
+          style={{ cursor: photos.length ? 'pointer' : 'default' }}
+        >
+          {photos.length > 0 ? (
+            <img src={photos[0]} alt={listing.title} className="ld-gallery__hero-img" />
+          ) : (
+            <div className="ld-gallery__hero-empty" role="img" aria-label="">
+              <FaImage aria-hidden />
+              <span>No photos uploaded</span>
+            </div>
+          )}
+        </div>
+        {photos.length > 1 && (
+          <div className="ld-gallery__thumbs">
+            {thumbPhotos.map((src, i) => {
+              const isLastThumb = i === thumbPhotos.length - 1;
+              return (
+                <div
+                  key={`${i}-${src}`}
+                  className="ld-gallery__thumb-cell"
+                  onClick={() => { setLightboxIdx(i + 1); setLightboxOpen(true); }}
+                >
+                  <img src={src} alt="" className="ld-gallery__thumb-img" />
+                  {isLastThumb && photos.length > 5 && (
+                    <button
+                      type="button"
+                      className="ld-show-all-btn"
+                      onClick={(e) => { e.stopPropagation(); setLightboxIdx(0); setLightboxOpen(true); }}
+                    >
+                      <FaTh /> Show all photos
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
-        </div>
-        <div className="ld-gallery__right">
-          <img src={mainImg} alt={listing.title} className="ld-gallery__main" />
-        </div>
+        )}
       </div>
       <p className="ld-published">
-        {dayjs(listing.availableFrom).format('MMMM DD, YYYY')}{' '}
-        <strong>:Published</strong>
+        {dayjs(listing.availableFrom).format('MMMM DD, YYYY')}
+        {' '}
+        <strong>: Published</strong>
       </p>
 
-      {/* ── Body: sidebar + content ── */}
       <div className="ld-body">
 
-        {/* Sidebar */}
         <aside className="ld-sidebar">
-          <div className="ld-book-card">
-            <h3 className="ld-book-card__title">
-              Book a stay <span className="ld-accent">online</span>
-            </h3>
-            <form onSubmit={handleBook}>
-              <div className="ld-field">
-                <label>*Full Name</label>
-                <input type="text" placeholder="Enter your name" value={bookName}
-                  onChange={(e) => setBookName(e.target.value)} required />
-              </div>
-              <div className="ld-field">
-                <label>*Email Address</label>
-                <input type="email" placeholder="Enter your email address" value={bookEmail}
-                  onChange={(e) => setBookEmail(e.target.value)} required />
-              </div>
-              <div className="ld-field">
-                <label>*Comment</label>
-                <textarea placeholder="Tell us what we can help you with!" rows={5} value={bookComment}
-                  onChange={(e) => setBookComment(e.target.value)} required />
-              </div>
-              <button type="submit" className="ld-book-btn">Book Now</button>
-              <p className="ld-book-powered">Powered by ListOn</p>
-            </form>
-          </div>
+          <div className="ld-widget">
 
-          <div className="ld-hours-card">
-            <div className="ld-hours-card__head">
-              <FaClock className="ld-hours-clock" />
-              <h3 className="ld-hours-title">
-                Opening <span className="ld-accent">Hours</span>
-              </h3>
+            <div className="ld-widget__header">
+              <div className="ld-widget__price">
+                <span className="ld-widget__amount">${listing.price.toLocaleString()}</span>
+                <span className="ld-widget__per"> / night</span>
+              </div>
+              <div className="ld-widget__rating">
+                <FaStar className="ld-widget__star" />
+                {displayRating ? (
+                  <>
+                    <span className="ld-widget__rating-val">{listing.rating.toFixed(1)}</span>
+                    <span className="ld-widget__revcount">· {reviewTotal} reviews</span>
+                  </>
+                ) : (
+                  <span className="ld-widget__revcount">New listing</span>
+                )}
+              </div>
             </div>
-            <ul className="ld-hours-list">
-              {HOURS.map((h) => (
-                <li key={h.day} className="ld-hours-row">
-                  <span className={h.closed ? 'ld-hours-time ld-hours-time--closed' : 'ld-hours-time'}>
-                    {h.time}
-                  </span>
-                  <span className="ld-hours-day">{h.day}</span>
-                </li>
-              ))}
-            </ul>
+
+            <div className="ld-widget__dates">
+              <div className="ld-widget__date-box ld-widget__date-box--left">
+                <label className="ld-widget__date-label" htmlFor="ld-checkin">CHECK-IN</label>
+                <input
+                  id="ld-checkin"
+                  type="date"
+                  className="ld-widget__date-input"
+                  value={checkIn}
+                  min={todayStr}
+                  onChange={(e) => {
+                    setCheckIn(e.target.value);
+                    if (checkOut && e.target.value >= checkOut) setCheckOut('');
+                  }}
+                />
+              </div>
+              <div className="ld-widget__date-box ld-widget__date-box--right">
+                <label className="ld-widget__date-label" htmlFor="ld-checkout">CHECKOUT</label>
+                <input
+                  id="ld-checkout"
+                  type="date"
+                  className="ld-widget__date-input"
+                  value={checkOut}
+                  min={minCheckOut}
+                  onChange={(e) => setCheckOut(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="ld-widget__guests" onClick={() => setGuestOpen((o) => !o)}>
+              <div>
+                <div className="ld-widget__date-label">GUESTS</div>
+                <div className="ld-widget__guests-val">
+                  <FaUsers className="ld-widget__guests-icon" />
+                  {guests} guest{guests > 1 ? 's' : ''}
+                </div>
+              </div>
+              <FaChevronDown className={`ld-widget__chev${guestOpen ? ' ld-widget__chev--open' : ''}`} />
+            </div>
+
+            {guestOpen && (
+              <div className="ld-widget__guest-panel">
+                {guestOptions.map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    className={`ld-widget__guest-opt${guests === n ? ' ld-widget__guest-opt--active' : ''}`}
+                    onClick={() => { setGuests(n); setGuestOpen(false); }}
+                  >
+                    {n} guest{n > 1 ? 's' : ''}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <button type="button" className="ld-widget__reserve-btn" onClick={handleReserve}>
+              Reserve
+            </button>
+            <p className="ld-widget__notice">You won&apos;t be charged yet</p>
+
+            {user && user.id !== hostId && hostId && (
+              <button
+                type="button"
+                className="ld-widget__contact-btn"
+                onClick={handleContactHost}
+                disabled={contactingHost}
+              >
+                <FaCommentDots />
+                {contactingHost ? 'Opening chat…' : 'Contact Host'}
+              </button>
+            )}
+
+            {nights > 0 && (
+              <div className="ld-widget__breakdown">
+                <div className="ld-widget__breakdown-row">
+                  <span>${listing.price.toLocaleString()} × {nights} night{nights > 1 ? 's' : ''}</span>
+                  <span>${subtotal.toLocaleString()}</span>
+                </div>
+                <div className="ld-widget__breakdown-row">
+                  <span>Cleaning fee</span>
+                  <span>${cleaningFee.toLocaleString()}</span>
+                </div>
+                <div className="ld-widget__breakdown-row">
+                  <span>Service fee</span>
+                  <span>${serviceFee.toLocaleString()}</span>
+                </div>
+                <div className="ld-widget__breakdown-divider" />
+                <div className="ld-widget__breakdown-row ld-widget__breakdown-row--total">
+                  <strong>Total before taxes</strong>
+                  <strong>${total.toLocaleString()}</strong>
+                </div>
+              </div>
+            )}
           </div>
         </aside>
 
-        {/* Main content */}
         <div className="ld-content">
 
-          {/* Description */}
           <section className="ld-section">
             <h2 className="ld-section-title">
-              Latest Property <span className="ld-accent">Reviews</span>
+              About this <span className="ld-accent">place</span>
             </h2>
-            <p className="ld-desc">
-              This exceptional property in {listing.location} offers an unparalleled experience for travelers seeking comfort, style, and authenticity. From the moment you arrive, the attention to detail is evident — every corner thoughtfully designed to create a welcoming atmosphere that feels both luxurious and homely.
-            </p>
-            <p className="ld-desc">
-              Whether you're visiting for a short getaway or an extended stay, this {listing.category} property delivers on every promise. With its prime location and outstanding amenities, it has earned its reputation as one of the most sought-after listings in the area. Listed since {dayjs(listing.availableFrom).format('MMMM YYYY')}, it continues to impress guests from around the world.
-            </p>
+            {listing.description ? (
+              listing.description.split('\n').filter(Boolean).map((para, idx) => (
+                <p key={idx} className="ld-desc">{para}</p>
+              ))
+            ) : (
+              <p className="ld-desc">The host has not added a detailed description yet.</p>
+            )}
           </section>
 
-          {/* Amenities */}
           <section className="ld-section">
             <h2 className="ld-section-title">
-              Amenities <span className="ld-accent">Available</span>
+              Amenities <span className="ld-accent">included</span>
             </h2>
-            <div className="ld-amenities">
-              {AMENITIES.map((a) => (
-                <div key={a.label} className="ld-amenity">
-                  <span className="ld-amenity__icon">{a.icon}</span>
-                  <span className="ld-amenity__label">{a.label}</span>
-                </div>
-              ))}
-            </div>
+            {(listing.amenities?.length ?? 0) > 0 ? (
+              <div className="ld-amenities">
+                {listing.amenities!.map((a) => (
+                  <div key={a} className="ld-amenity">
+                    <span className="ld-amenity__icon">{amenityIcon(a)}</span>
+                    <span className="ld-amenity__label">{a}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="ld-desc">No amenities listed yet.</p>
+            )}
           </section>
 
-          {/* Pricing */}
           <section className="ld-section">
             <h2 className="ld-section-title">Pricing</h2>
             <div className="ld-pricing">
@@ -287,73 +566,101 @@ export default function ListingDetail() {
             </div>
           </section>
 
-          {/* Reviews */}
           <section className="ld-section">
             <h2 className="ld-section-title">
-              Latest Property <span className="ld-accent">Reviews</span>
+              Guest <span className="ld-accent">reviews</span>
             </h2>
-            <div className="ld-reviews">
-              {MOCK_REVIEWS.map((r) => (
-                <div key={r.id} className="ld-review">
-                  <div className="ld-review__top">
-                    <div className="ld-review__stars-row">
-                      {Array.from({ length: 5 }, (_, i) => (
-                        <FaStar key={i} className={i < r.rating ? 'ld-star--on' : 'ld-star--off'} />
-                      ))}
-                      <span className="ld-review__score">{r.rating}.5/5</span>
+            {reviews.length === 0 ? (
+              <p className="ld-desc">No reviews yet. Be the first to stay and share feedback.</p>
+            ) : (
+              <div className="ld-reviews">
+                {reviews.map((r) => (
+                  <div key={r.id} className="ld-review">
+                    <div className="ld-review__top">
+                      <div className="ld-review__stars-row">
+                        {Array.from({ length: 5 }, (_, i) => (
+                          <FaStar key={i} className={i < r.rating ? 'ld-star--on' : 'ld-star--off'} />
+                        ))}
+                        <span className="ld-review__score">{r.rating}/5</span>
+                      </div>
+                      <div className="ld-review__author">
+                        <span className="ld-review__name">{r.user?.name ?? 'Guest'} —</span>
+                        <span className="ld-review__date">{dayjs(r.createdAt).format('MMM D, YYYY h:mm a')}</span>
+                        {r.user?.avatar ? (
+                          <img src={r.user.avatar} alt="" className="ld-review__avatar" />
+                        ) : (
+                          <span className="ld-review__avatar ld-review__avatar--placeholder" aria-hidden>
+                            <FaUserCircle />
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="ld-review__author">
-                      <span className="ld-review__name">{r.name} -</span>
-                      <span className="ld-review__date">{r.date}</span>
-                      <img src={r.avatar} alt={r.name} className="ld-review__avatar" />
+                    <p className="ld-review__text">{r.comment}</p>
+                    <div className="ld-helpful-row">
+                      <FaThumbsUp className="ld-helpful-icon" aria-hidden />
+                      <span>Helpful</span>
                     </div>
                   </div>
-                  <p className="ld-review__text">{r.text}</p>
-                  <button className="ld-helpful-btn">
-                    {r.helpful} <span>|</span> Helpful Review <FaThumbsUp />
-                  </button>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </section>
         </div>
       </div>
 
-      {/* ── Leave a comment ── */}
       <section className="ld-comment-section">
         <h2 className="ld-section-title">
-          Leave a <span className="ld-accent">Comment</span>
+          Write a <span className="ld-accent">review</span>
         </h2>
-        <form className="ld-comment-form" onSubmit={handleComment}>
-          <div className="ld-comment-row">
-            <div className="ld-field">
-              <label>*Email Address</label>
-              <input type="email" value={cEmail} onChange={(e) => setCEmail(e.target.value)} required />
-            </div>
-            <div className="ld-field">
-              <label>*Full Name</label>
-              <input type="text" value={cName} onChange={(e) => setCName(e.target.value)} required />
+        <p className="ld-desc ld-review-hint">
+          Guests with a <strong>confirmed booking</strong> for this listing can leave a rating and comment.
+        </p>
+        <form className="ld-comment-form" onSubmit={handleReviewSubmit}>
+          <div className="ld-field">
+            <span className="ld-widget__date-label">RATING</span>
+            <div className="ld-star-pick" role="group" aria-label="Rating">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  className={`ld-star-pick__btn${reviewRating >= n ? ' ld-star-pick__btn--on' : ''}`}
+                  onClick={() => setReviewRating(n)}
+                  aria-label={`${n} stars`}
+                >
+                  <FaStar />
+                </button>
+              ))}
             </div>
           </div>
           <div className="ld-field">
-            <label>*Comment</label>
-            <textarea rows={4} value={cText} onChange={(e) => setCText(e.target.value)} required />
+            <label htmlFor="ld-review-comment">Comment</label>
+            <textarea
+              id="ld-review-comment"
+              rows={4}
+              value={reviewComment}
+              onChange={(e) => setReviewComment(e.target.value)}
+              placeholder="Share what stood out about your stay…"
+              required
+            />
           </div>
-          <button type="submit" className="ld-comment-submit">Submit</button>
+          <button type="submit" className="ld-comment-submit" disabled={reviewSubmitting}>
+            {reviewSubmitting ? 'Submitting…' : 'Submit review'}
+          </button>
         </form>
       </section>
 
-      {/* ── Similar listings ── */}
       {similar.length > 0 && (
         <section className="ld-similar-section">
           <p className="ld-similar-eyebrow">Similar Listings</p>
           <h2 className="ld-similar-heading">Similar Listings You May Like</h2>
           <p className="ld-similar-sub">
-            Discover exciting categories.{' '}
-            <span className="ld-accent">Find what you're looking for</span>
+            Discover more in this category.
+            {' '}
+            <span className="ld-accent">Find what you&apos;re looking for</span>
           </p>
           <div className="ld-similar-row">
             <button
+              type="button"
               className="ld-carousel-btn"
               onClick={() => setSimPage((p) => Math.max(0, p - 1))}
               disabled={simPage === 0}
@@ -362,20 +669,24 @@ export default function ListingDetail() {
             </button>
             <div className="ld-similar-grid">
               {similar.map((s) => (
-                <div key={s.id} className="ld-sim-card" onClick={() => { navigate(`/listings/${s.id}`); window.scrollTo(0, 0); }}>
+                <div
+                  key={s.id}
+                  className="ld-sim-card"
+                  onClick={() => { navigate(`/listings/${s.id}`); window.scrollTo(0, 0); }}
+                >
                   <div className="ld-sim-card__img-wrap">
                     <div className="ld-sim-card__actions">
-                      <button className="ld-sim-card__action-btn" onClick={(e) => e.stopPropagation()}><FaSearch /></button>
-                      <button className="ld-sim-card__action-btn" onClick={(e) => e.stopPropagation()}><FaRegHeart /></button>
+                      <button type="button" className="ld-sim-card__action-btn" onClick={(e) => e.stopPropagation()}><FaSearch /></button>
+                      <button type="button" className="ld-sim-card__action-btn" onClick={(e) => e.stopPropagation()}><FaRegHeart /></button>
                     </div>
                     <span className="ld-sim-card__off">OFF 10%</span>
-                    <img src={s.img} alt={s.title} className="ld-sim-card__img" />
+                    <ListingCover url={s.img} alt={s.title} className="ld-sim-card__img" />
                     <div className="ld-sim-card__cat"><FaHome /></div>
                   </div>
                   <div className="ld-sim-card__body">
                     <div className="ld-sim-card__rating">
-                      <span className="ld-sim-card__rev-count">reviews {Math.floor(s.rating * 487 + 12).toLocaleString()}</span>
-                      <span className="ld-sim-card__score">({s.rating.toFixed(1)})</span>
+                      <span className="ld-sim-card__rev-count">{s.rating > 0 ? 'Rated' : 'New'}</span>
+                      <span className="ld-sim-card__score">({s.rating > 0 ? s.rating.toFixed(1) : '—'})</span>
                       <FaStar className="ld-star--on" />
                     </div>
                     <p className="ld-sim-card__title">{s.title}</p>
@@ -384,6 +695,7 @@ export default function ListingDetail() {
               ))}
             </div>
             <button
+              type="button"
               className="ld-carousel-btn"
               onClick={() => setSimPage((p) => p + 1)}
               disabled={simPage >= Math.max(0, similar.length / 4 - 1)}
@@ -392,10 +704,49 @@ export default function ListingDetail() {
             </button>
           </div>
           <div className="ld-carousel-dots">
-            <button className={`ld-dot${simPage === 0 ? ' ld-dot--active' : ''}`} onClick={() => setSimPage(0)} />
-            <button className={`ld-dot${simPage === 1 ? ' ld-dot--active' : ''}`} onClick={() => setSimPage(1)} />
+            <button type="button" className={`ld-dot${simPage === 0 ? ' ld-dot--active' : ''}`} onClick={() => setSimPage(0)} />
+            <button type="button" className={`ld-dot${simPage === 1 ? ' ld-dot--active' : ''}`} onClick={() => setSimPage(1)} />
           </div>
         </section>
+      )}
+
+      {lightboxOpen && photos.length > 0 && (
+        <div className="ld-lightbox" onClick={closeLightbox}>
+          <div className="ld-lightbox__topbar">
+            <span className="ld-lightbox__counter">{lightboxIdx + 1} / {photos.length}</span>
+            <button type="button" className="ld-lightbox__close" onClick={(e) => { e.stopPropagation(); closeLightbox(); }}><FaX /></button>
+          </div>
+          <button
+            type="button"
+            className="ld-lightbox__arrow ld-lightbox__arrow--left"
+            onClick={(e) => { e.stopPropagation(); prevPhoto(); }}
+          >
+            <FaChevLeft />
+          </button>
+          <img
+            src={photos[lightboxIdx]}
+            alt={`Photo ${lightboxIdx + 1}`}
+            className="ld-lightbox__img"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            type="button"
+            className="ld-lightbox__arrow ld-lightbox__arrow--right"
+            onClick={(e) => { e.stopPropagation(); nextPhoto(); }}
+          >
+            <FaChevRight />
+          </button>
+          <div className="ld-lightbox__dots">
+            {photos.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`ld-lightbox__dot${i === lightboxIdx ? ' ld-lightbox__dot--active' : ''}`}
+                onClick={(e) => { e.stopPropagation(); setLightboxIdx(i); }}
+              />
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );

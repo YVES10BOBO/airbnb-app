@@ -265,6 +265,7 @@
 }
 .bk-modal__close:hover { background: #fee2e2; color: #dc2626; }
 .bk-modal__icon  { font-size: 48px; margin-bottom: 16px; }
+.bk-modal__icon--trash { color: #dc2626; }
 .bk-modal__title { font-size: 20px; font-weight: 700; color: #111; margin-bottom: 12px; }
 .bk-modal__body  { font-size: 14px; color: #666; line-height: 1.6; margin-bottom: 28px; }
 .bk-modal__body strong { color: #111; }

@@ -91,6 +91,12 @@
 .ml-row:last-child { border-bottom: none; }
 .ml-row:hover { background: #fafafa; }
 .ml-row td { padding: 14px 16px; vertical-align: middle; }
+.ml-table__empty {
+  text-align: center;
+  color: #8b8b8b;
+  font-size: 13px;
+  padding: 26px 16px !important;
+}
 
 .ml-row__prop { display: flex; align-items: center; gap: 12px; }
 .ml-row__img { width: 52px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
@@ -128,6 +134,10 @@
 .ml-action--view:hover   { background: #0284c7; color: #fff; }
 .ml-action--edit:hover   { background: #d97706; color: #fff; }
 .ml-action--del:hover    { background: #c62828; color: #fff; }
+.ml-action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 
 @media (max-width: 640px) {
   .ml-summary { grid-template-columns: 1fr 1fr; }

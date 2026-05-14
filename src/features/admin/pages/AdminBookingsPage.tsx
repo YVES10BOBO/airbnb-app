@@ -1,62 +1,90 @@
-import { useState, useMemo } from 'react';
-import { FaSearch, FaChevronLeft, FaChevronRight, FaCheck, FaTimes, FaTrash } from 'react-icons/fa';
+import { useEffect, useMemo, useState } from 'react';
+import { FaSearch, FaChevronLeft, FaChevronRight, FaCheck, FaTimes, FaTrash, FaSpinner } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import { bookingsService } from '../../../api';
+import type { ApiBooking } from '../../../api/types';
 
-type BookStatus = 'approved' | 'pending' | 'cancelled';
+type AdminBooking = ApiBooking & {
+  listing?: { title?: string };
+  guest?: { name?: string };
+};
 
-interface AdminBooking {
-  id: number; listing: string; guest: string; host: string;
-  dates: string; amount: number; guests: number; status: BookStatus;
-}
-
-const INIT: AdminBooking[] = [
-  { id: 1, listing: 'Cozy Downtown Apartment', guest: 'Bob Tanaka',   host: 'Alice Moreau', dates: 'Aug 1–5, 2026',    amount: 480,  guests: 2, status: 'approved'  },
-  { id: 2, listing: 'Lakeside Cabin Retreat',  guest: 'Diana Osei',   host: 'Clara Singh',  dates: 'Sep 10–17, 2026',  amount: 1925, guests: 4, status: 'approved'  },
-  { id: 3, listing: 'Charming Victorian House', guest: 'Evan Carter',  host: 'Clara Singh',  dates: 'Oct 20–23, 2026',  amount: 960,  guests: 3, status: 'pending'   },
-  { id: 4, listing: 'Modern Beach Villa',       guest: 'Emma Johnson', host: 'Alice Moreau', dates: 'Jun 12–18, 2026',  amount: 3300, guests: 6, status: 'pending'   },
-  { id: 5, listing: 'Alpine Ski Chalet',        guest: 'Laila Osman',  host: 'Marcus Lee',   dates: 'Sep 5–10, 2026',   amount: 3200, guests: 4, status: 'cancelled' },
-  { id: 6, listing: 'Luxury Penthouse Suite',   guest: 'Marcus Lee',   host: 'Clara Singh',  dates: 'Nov 1–4, 2026',    amount: 1440, guests: 2, status: 'pending'   },
-];
-
-const statusCls: Record<BookStatus, string> = {
-  approved:  'adm-badge adm-badge--approved',
-  pending:   'adm-badge adm-badge--pending',
-  cancelled: 'adm-badge adm-badge--banned',
+const statusCls: Record<string, string> = {
+  CONFIRMED: 'adm-badge adm-badge--approved',
+  PENDING: 'adm-badge adm-badge--pending',
+  CANCELLED: 'adm-badge adm-badge--banned',
 };
 
 export default function AdminBookingsPage() {
-  const [bookings, setBookings] = useState<AdminBooking[]>(INIT);
+  const [bookings, setBookings] = useState<AdminBooking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [search, setSearch]     = useState('');
   const [page, setPage]         = useState(1);
   const [delTarget, setDel]     = useState<AdminBooking | null>(null);
   const pageSize = 5;
 
+  useEffect(() => {
+    setLoading(true);
+    bookingsService.getAll()
+      .then((rows) => setBookings(rows as AdminBooking[]))
+      .catch(() => toast.error('Failed to load bookings.'))
+      .finally(() => setLoading(false));
+  }, []);
+
   const filtered = useMemo(() =>
     bookings.filter(b =>
-      b.listing.toLowerCase().includes(search.toLowerCase()) ||
-      b.guest.toLowerCase().includes(search.toLowerCase()) ||
-      b.host.toLowerCase().includes(search.toLowerCase())
+      (b.listing?.title ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      (b.guest?.name ?? '').toLowerCase().includes(search.toLowerCase())
     ), [bookings, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage   = Math.min(page, totalPages);
   const rows       = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
 
+  function formatDates(checkIn: string, checkOut: string): string {
+    const inDate = new Date(checkIn);
+    const outDate = new Date(checkOut);
+    return `${inDate.toLocaleDateString()} - ${outDate.toLocaleDateString()}`;
+  }
+
   function approve(b: AdminBooking) {
-    if (b.status === 'approved') { toast('Already approved.', { icon: 'ℹ️' }); return; }
-    setBookings(prev => prev.map(x => x.id === b.id ? { ...x, status: 'approved' } : x));
-    toast.success(`Booking for "${b.listing}" approved!`);
+    if (b.status === 'CONFIRMED') { toast('Already approved.', { icon: 'ℹ️' }); return; }
+    setBusyId(b.id);
+    bookingsService.updateStatus(b.id, 'CONFIRMED')
+      .then((updated) => {
+        setBookings((prev) => prev.map((x) => (x.id === b.id ? { ...x, status: updated.status } : x)));
+        toast.success(`Booking for "${b.listing?.title ?? 'listing'}" approved!`);
+      })
+      .catch(() => toast.error('Failed to approve booking.'))
+      .finally(() => setBusyId(null));
   }
+
   function cancel(b: AdminBooking) {
-    if (b.status === 'cancelled') { toast('Already cancelled.', { icon: 'ℹ️' }); return; }
-    setBookings(prev => prev.map(x => x.id === b.id ? { ...x, status: 'cancelled' } : x));
-    toast.error(`Booking for "${b.listing}" cancelled.`);
+    if (b.status === 'CANCELLED') { toast('Already cancelled.', { icon: 'ℹ️' }); return; }
+    setBusyId(b.id);
+    bookingsService.updateStatus(b.id, 'CANCELLED')
+      .then((updated) => {
+        setBookings((prev) => prev.map((x) => (x.id === b.id ? { ...x, status: updated.status } : x)));
+        toast.error(`Booking for "${b.listing?.title ?? 'listing'}" cancelled.`);
+      })
+      .catch(() => toast.error('Failed to cancel booking.'))
+      .finally(() => setBusyId(null));
   }
-  function confirmDelete() {
+
+  async function confirmDelete() {
     if (!delTarget) return;
-    setBookings(prev => prev.filter(x => x.id !== delTarget.id));
-    toast.error(`Booking deleted.`);
-    setDel(null);
+    setBusyId(delTarget.id);
+    try {
+      await bookingsService.cancel(delTarget.id);
+      setBookings((prev) => prev.filter((x) => x.id !== delTarget.id));
+      toast.success('Booking deleted.');
+      setDel(null);
+    } catch {
+      toast.error('Failed to delete booking.');
+    } finally {
+      setBusyId(null);
+    }
   }
 
   return (
@@ -73,7 +101,7 @@ export default function AdminBookingsPage() {
             <span className="adm-controls__label">Search:</span>
             <div className="adm-search">
               <FaSearch className="adm-search__icon" />
-              <input className="adm-search__input" placeholder="Listing, guest, host…" value={search}
+              <input className="adm-search__input" placeholder="Listing or guest…" value={search}
                 onChange={e => { setSearch(e.target.value); setPage(1); }} />
             </div>
           </div>
@@ -86,23 +114,31 @@ export default function AdminBookingsPage() {
               <th>DATES</th><th>GUESTS</th><th>AMOUNT</th><th>STATUS</th><th>ACTION</th>
             </tr></thead>
             <tbody>
-              {rows.length === 0
+              {loading
+                ? <tr><td colSpan={9} className="adm-table__empty"><FaSpinner style={{ animation: 'spin 1s linear infinite' }} /> Loading bookings...</td></tr>
+                : rows.length === 0
                 ? <tr><td colSpan={9} className="adm-table__empty">No bookings found.</td></tr>
                 : rows.map((b, i) => (
                   <tr key={b.id}>
                     <td className="adm-td--sl">{String((safePage - 1) * pageSize + i + 1).padStart(2, '0')}</td>
-                    <td style={{ fontWeight: 600, color: '#111', minWidth: 150 }}>{b.listing}</td>
-                    <td style={{ color: '#555' }}>{b.guest}</td>
-                    <td style={{ color: '#888' }}>{b.host}</td>
-                    <td style={{ color: '#666', fontSize: 12, whiteSpace: 'nowrap' }}>{b.dates}</td>
+                    <td style={{ fontWeight: 600, color: '#111', minWidth: 150 }}>{b.listing?.title ?? '—'}</td>
+                    <td style={{ color: '#555' }}>{b.guest?.name ?? '—'}</td>
+                    <td style={{ color: '#888' }}>—</td>
+                    <td style={{ color: '#666', fontSize: 12, whiteSpace: 'nowrap' }}>{formatDates(b.checkIn, b.checkOut)}</td>
                     <td style={{ textAlign: 'center', color: '#555' }}>{b.guests}</td>
-                    <td style={{ fontWeight: 700, color: '#FF4A2A', whiteSpace: 'nowrap' }}>${b.amount.toLocaleString()}</td>
-                    <td><span className={statusCls[b.status]}>{b.status}</span></td>
+                    <td style={{ fontWeight: 700, color: '#FF4A2A', whiteSpace: 'nowrap' }}>${b.totalPrice.toLocaleString()}</td>
+                    <td><span className={statusCls[b.status] ?? 'adm-badge'}>{b.status}</span></td>
                     <td>
                       <div className="adm-actions">
-                        <button className="adm-btn adm-btn--green adm-btn--icon" title="Approve" onClick={() => approve(b)}><FaCheck /></button>
-                        <button className="adm-btn adm-btn--orange adm-btn--icon" title="Cancel" onClick={() => cancel(b)}><FaTimes /></button>
-                        <button className="adm-btn adm-btn--red adm-btn--icon" title="Delete" onClick={() => setDel(b)}><FaTrash /></button>
+                        {busyId === b.id ? (
+                          <FaSpinner style={{ animation: 'spin 1s linear infinite' }} />
+                        ) : (
+                          <>
+                            <button className="adm-btn adm-btn--green adm-btn--icon" title="Approve" onClick={() => approve(b)}><FaCheck /></button>
+                            <button className="adm-btn adm-btn--orange adm-btn--icon" title="Cancel" onClick={() => cancel(b)}><FaTimes /></button>
+                            <button className="adm-btn adm-btn--red adm-btn--icon" title="Delete" onClick={() => setDel(b)}><FaTrash /></button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -131,9 +167,9 @@ export default function AdminBookingsPage() {
         <div className="bk-modal-overlay" onClick={() => setDel(null)}>
           <div className="bk-modal" onClick={e => e.stopPropagation()}>
             <button className="bk-modal__close" onClick={() => setDel(null)}><FaTimes /></button>
-            <div className="bk-modal__icon">🗑️</div>
+            <div className="bk-modal__icon"><FaTrash /></div>
             <h3 className="bk-modal__title">Delete Booking?</h3>
-            <p className="bk-modal__body">Permanently delete booking for <strong>{delTarget.listing}</strong>? This cannot be undone.</p>
+            <p className="bk-modal__body">Permanently delete booking for <strong>{delTarget.listing?.title ?? 'this listing'}</strong>? This cannot be undone.</p>
             <div className="bk-modal__actions">
               <button className="bk-modal__btn bk-modal__btn--cancel" onClick={() => setDel(null)}>Cancel</button>
               <button className="bk-modal__btn bk-modal__btn--confirm" onClick={confirmDelete}>Yes, Delete</button>

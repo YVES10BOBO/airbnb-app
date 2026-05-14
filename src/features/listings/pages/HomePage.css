@@ -41,6 +41,14 @@
   font-size: 12px;
   color: rgba(255,255,255,0.8);
   margin: 0 0 2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hp-welcome__greet-icon {
+  font-size: 14px;
+  opacity: 0.95;
+  flex-shrink: 0;
 }
 .hp-welcome__name {
   font-size: 18px;
@@ -130,7 +138,7 @@
 .hp-section--gray .hp-featured-wrap,
 .hp-section--gray .hp-featured-footer,
 .hp-section--gray .hp-trust,
-.hp-section--gray .hp-destinations {
+.hp-section--gray .hp-preview-grid {
   max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
@@ -398,6 +406,7 @@
 .hp-featured-card__img-wrap { position: relative; height: 190px; overflow: hidden; }
 .hp-featured-card__img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
 .hp-featured-card:hover .hp-featured-card__img { transform: scale(1.04); }
+.hp-featured-card:hover .listing-cover-placeholder { transform: scale(1.04); }
 .hp-featured-card__heart {
   position: absolute;
   top: 10px;
@@ -502,41 +511,88 @@
   z-index: 0;
 }
 
-/* ── Destinations grid ── */
-.hp-destinations {
+/* ── Available listings preview grid ── */
+.hp-preview-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(2, 200px);
-  gap: 16px;
+  gap: 24px;
 }
-.hp-dest-card {
-  position: relative;
+.hp-preview-card {
+  background: #fff;
   border-radius: 16px;
   overflow: hidden;
-  display: block;
-  text-decoration: none;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
   cursor: pointer;
+  transition: transform 0.22s, box-shadow 0.22s;
 }
-.hp-dest-card:nth-child(1) { grid-row: span 2; }
-.hp-dest-card__img {
+.hp-preview-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.13);
+}
+.hp-preview-card__img-wrap {
+  position: relative;
+  height: 190px;
+  overflow: hidden;
+}
+.hp-preview-card__img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   transition: transform 0.35s;
 }
-.hp-dest-card:hover .hp-dest-card__img { transform: scale(1.07); }
-.hp-dest-card__overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 50%);
-  display: flex;
-  align-items: flex-end;
-  gap: 6px;
-  padding: 16px;
-  color: #fff;
+.hp-preview-card:hover .hp-preview-card__img { transform: scale(1.05); }
+.hp-preview-card__body {
+  padding: 14px 16px 16px;
 }
-.hp-dest-card__pin { font-size: 14px; color: #FF4A2A; flex-shrink: 0; }
-.hp-dest-card__label { font-size: 14px; font-weight: 700; }
+.hp-preview-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.hp-preview-card__title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #111;
+  margin: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.hp-preview-card__rating {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.hp-preview-card__loc {
+  font-size: 0.78rem;
+  color: #888;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 10px;
+}
+.hp-preview-card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.hp-preview-card__type {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  background: #fff0ed;
+  color: #FF4A2A;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
 
 /* ── Trust cards ── */
 .hp-trust {
@@ -637,8 +693,7 @@
   .hp-cta__img-wrap { display: none; }
   .hp-how { grid-template-columns: 1fr; gap: 40px; }
   .hp-how-step__connector { display: none; }
-  .hp-destinations { grid-template-columns: repeat(2, 1fr); grid-template-rows: auto; }
-  .hp-dest-card:nth-child(1) { grid-row: span 1; }
+  .hp-preview-grid { grid-template-columns: repeat(2, 1fr); }
   .hp-stats__inner { grid-template-columns: repeat(2, 1fr); gap: 0; }
   .hp-stat { border-bottom: 1px solid rgba(255,255,255,0.2); }
   .hp-stat:nth-child(odd) { border-right: 1px solid rgba(255,255,255,0.2); }
@@ -659,7 +714,7 @@
   .hp-searchbar__divider { display: none; }
   .hp-searchbar__btn { width: 100%; padding: 14px; text-align: center; }
   .hp-cats { grid-template-columns: 1fr; }
-  .hp-destinations { grid-template-columns: 1fr; }
+  .hp-preview-grid { grid-template-columns: 1fr; }
   .hp-section { padding: 48px 16px; }
   .hp-section--gray { padding: 48px 0; }
   .hp-featured-card { width: 240px; }

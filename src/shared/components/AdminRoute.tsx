@@ -9,7 +9,8 @@ function Denied() {
 }
 
 export default function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
+  if (loading) return null;
   if (!isAuthenticated || user?.role !== 'admin') return <Denied />;
   return <>{children}</>;
 }

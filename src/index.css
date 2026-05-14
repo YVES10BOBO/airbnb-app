@@ -4,6 +4,178 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ══════════════════════════════════════════
+   DESIGN TOKENS  (light → dark via html.dark)
+══════════════════════════════════════════ */
+:root {
+  --clr-bg:      #f7f7f7;
+  --clr-surface: #ffffff;
+  --clr-alt:     #f5f5f5;
+  --clr-border:  #e8e8e8;
+  --clr-text:    #111111;
+  --clr-text-2:  #555555;
+  --clr-text-3:  #888888;
+}
+html.dark {
+  color-scheme: dark;
+  --clr-bg:      #0f0f12;
+  --clr-surface: #1a1a1f;
+  --clr-alt:     #141418;
+  --clr-border:  #2a2a32;
+  --clr-text:    #e8e8ea;
+  --clr-text-2:  #b0b0ba;
+  --clr-text-3:  #6b6b7a;
+}
+
+/* ══ DARK MODE BASE ══ */
+html.dark body  { background: var(--clr-bg) !important; color: var(--clr-text) !important; }
+html.dark #root { background: var(--clr-bg); }
+
+/* ── All page-level wrappers ── */
+html.dark .hp, html.dark .dp, html.dark .explore-page, html.dark .about-page,
+html.dark .dash-layout, html.dark .dash-main, html.dark .al-page,
+html.dark .co-page, html.dark .ld-page, html.dark .adm-main,
+html.dark .auth-split { background: var(--clr-bg) !important; }
+
+/* ── Sidebars ── */
+html.dark .dash-sidebar, html.dark .adm-sidebar {
+  background: var(--clr-surface) !important;
+  border-color: var(--clr-border) !important;
+}
+
+/* ── White surface cards ── */
+html.dark .adm-card, html.dark .adm-stat-card, html.dark .al-card,
+html.dark .co-form, html.dark .co-summary-card, html.dark .co-price-breakdown,
+html.dark .auth-split__form, html.dark .auth-form__inner, html.dark .navbar__user-menu,
+html.dark .bk-card, html.dark .bk-modal, html.dark .tr-card,
+html.dark .dp-stat-card, html.dark .dp-recent-card,
+html.dark .ml-card, html.dark .msg-panel, html.dark .msg-thread, html.dark .msg-sidebar,
+html.dark .notif-item, html.dark .prof-card, html.dark .sett-card,
+html.dark .rev-card, html.dark .wallet-card, html.dark .wallet-tx,
+html.dark .sup-card, html.dark .lc-card, html.dark .listing-card,
+html.dark .explore-card, html.dark .lp-filter-panel,
+html.dark .ld-amenities, html.dark .ld-reviews, html.dark .ld-reserve-box, html.dark .ld-host {
+  background: var(--clr-surface) !important;
+  border-color: var(--clr-border) !important;
+}
+
+/* ── Alt surfaces ── */
+html.dark .al-summary, html.dark .al-dropzone,
+html.dark .adm-table th, html.dark .lp-searchbar {
+  background: var(--clr-alt) !important;
+  border-color: var(--clr-border) !important;
+}
+
+/* ── Inputs ── */
+html.dark input:not([type="checkbox"]):not([type="radio"]),
+html.dark textarea, html.dark select {
+  background: var(--clr-alt) !important;
+  color: var(--clr-text) !important;
+  border-color: var(--clr-border) !important;
+}
+html.dark input::placeholder, html.dark textarea::placeholder { color: var(--clr-text-3); }
+
+/* ── Headings ── */
+html.dark h1, html.dark h2, html.dark h3,
+html.dark h4, html.dark h5, html.dark h6 { color: var(--clr-text); }
+
+/* ── Body text ── */
+html.dark p, html.dark td, html.dark li,
+html.dark label, html.dark span:not([class*="badge"]):not([class*="btn"]):not([class*="tag"]) {
+  color: inherit;
+}
+
+/* ── Sidebar nav ── */
+html.dark .dash-sidebar__link { color: var(--clr-text-2); }
+html.dark .dash-sidebar__link:hover { background: var(--clr-alt); color: var(--clr-text); }
+html.dark .dash-sidebar__link--active { background: rgba(255,74,42,0.12) !important; color: #FF4A2A !important; }
+html.dark .dash-sidebar__group-label, html.dark .dash-sidebar__sub-link { color: var(--clr-text-3); }
+html.dark .dash-sidebar__name { color: var(--clr-text); }
+html.dark .dash-sidebar__sub-link:hover { color: #FF4A2A; }
+html.dark .dash-sidebar__logout { background: rgba(255,74,42,0.08); color: #FF4A2A; }
+
+/* ── Admin nav ── */
+html.dark .adm-sidebar__link { color: var(--clr-text-2); }
+html.dark .adm-sidebar__link:hover { background: var(--clr-alt); color: var(--clr-text); }
+html.dark .adm-sidebar__link--active { background: rgba(255,74,42,0.15) !important; color: #FF4A2A !important; }
+html.dark .adm-sidebar__brand-sub { color: var(--clr-text-3); }
+html.dark .adm-sidebar__user-name { color: var(--clr-text); }
+html.dark .adm-page__title { color: var(--clr-text); }
+html.dark .adm-page__sub, html.dark .adm-footer__info, html.dark .adm-table__empty { color: var(--clr-text-3); }
+html.dark .adm-table td { border-color: var(--clr-border); color: var(--clr-text-2); }
+html.dark .adm-table th { color: var(--clr-text-3) !important; border-color: var(--clr-border) !important; }
+html.dark .adm-table tr:hover td { background: var(--clr-alt); }
+html.dark .adm-stat-card__val { color: var(--clr-text); }
+html.dark .adm-stat-card__label { color: var(--clr-text-3); }
+html.dark .adm-btn--gray { background: var(--clr-alt); color: var(--clr-text-2); }
+html.dark .adm-controls, html.dark .adm-footer { border-color: var(--clr-border); }
+html.dark .adm-page-btn { background: var(--clr-surface); border-color: var(--clr-border); color: var(--clr-text-2); }
+html.dark .adm-tab { background: var(--clr-surface); border-color: var(--clr-border); color: var(--clr-text-2); }
+html.dark .adm-tab:hover { border-color: #FF4A2A; color: #FF4A2A; }
+html.dark .adm-search { background: var(--clr-alt) !important; border-color: var(--clr-border) !important; }
+html.dark .adm-search__icon { color: var(--clr-text-3); }
+
+/* ── Modal ── */
+html.dark .bk-modal__title { color: var(--clr-text) !important; }
+html.dark .bk-modal__body { color: var(--clr-text-2) !important; }
+html.dark .bk-modal__btn--cancel { background: var(--clr-alt) !important; color: var(--clr-text-2) !important; }
+
+/* ── Checkout ── */
+html.dark .co-trip-val, html.dark .co-section__title, html.dark .co-title { color: var(--clr-text); }
+html.dark .co-trip-label, html.dark .co-label, html.dark .co-notice { color: var(--clr-text-3); }
+html.dark .co-price-row { color: var(--clr-text-2); }
+html.dark .co-price-row--total strong { color: var(--clr-text); }
+html.dark .co-summary-card__title { color: var(--clr-text); }
+html.dark .co-summary-card__cat, html.dark .co-summary-card__loc { color: var(--clr-text-3); }
+html.dark .co-policy { background: rgba(34,80,34,0.3) !important; border-color: #2a4a2a !important; }
+html.dark .co-divider, html.dark .co-price-divider { border-color: var(--clr-border) !important; }
+
+/* ── Add listing ── */
+html.dark .al-step__title { color: var(--clr-text); }
+html.dark .al-step__sub, html.dark .al-field__label, html.dark .al-field__count { color: var(--clr-text-3); }
+html.dark .al-type-card { background: var(--clr-surface) !important; border-color: var(--clr-border) !important; color: var(--clr-text-2) !important; }
+html.dark .al-type-card:hover, html.dark .al-amenity:hover { border-color: #FF4A2A !important; }
+html.dark .al-amenity { background: var(--clr-surface) !important; border-color: var(--clr-border) !important; color: var(--clr-text-2) !important; }
+html.dark .al-dropzone__text { color: var(--clr-text-2); }
+html.dark .al-dropzone__hint, html.dark .al-summary__row span { color: var(--clr-text-3); }
+html.dark .al-counter__label { color: var(--clr-text-2); }
+html.dark .al-counter__val { color: var(--clr-text); }
+html.dark .al-counter__btn { background: var(--clr-alt) !important; border-color: var(--clr-border) !important; color: var(--clr-text-2) !important; }
+html.dark .al-summary__title { color: var(--clr-text); }
+html.dark .al-divider { border-color: var(--clr-border); }
+
+/* ── Auth ── */
+html.dark .auth-form__title { color: var(--clr-text); }
+html.dark .auth-form__sub, html.dark .auth-social__note, html.dark .auth-footer__line { color: var(--clr-text-3); }
+html.dark .auth-field__label { color: var(--clr-text-2); }
+html.dark .auth-social__btn--light { background: var(--clr-alt) !important; color: var(--clr-text) !important; border-color: var(--clr-border) !important; }
+html.dark .auth-divider { color: var(--clr-text-3); }
+html.dark .auth-divider::before, html.dark .auth-divider::after { background: var(--clr-border); }
+
+/* ── Listing card & detail ── */
+html.dark .lc-title { color: var(--clr-text) !important; }
+html.dark .lc-location { color: var(--clr-text-3) !important; }
+
+/* ── Explore page ── */
+html.dark .explore-stat__label { color: var(--clr-text-3); }
+html.dark .explore-stat__num { color: var(--clr-text); }
+html.dark .explore-card__label { color: #fff; }
+
+/* ── Tailwind overrides ── */
+html.dark .bg-white { background-color: var(--clr-surface) !important; }
+html.dark .bg-gray-50 { background-color: var(--clr-alt) !important; }
+html.dark .bg-gray-100 { background-color: var(--clr-alt) !important; }
+html.dark .text-gray-900, html.dark .text-gray-800 { color: var(--clr-text) !important; }
+html.dark .text-gray-700, html.dark .text-gray-600 { color: var(--clr-text-2) !important; }
+html.dark .text-gray-500, html.dark .text-gray-400 { color: var(--clr-text-3) !important; }
+html.dark .border-gray-100, html.dark .border-gray-200 { border-color: var(--clr-border) !important; }
+html.dark .hover\:bg-gray-50:hover { background-color: var(--clr-alt) !important; }
+html.dark .shadow-sm { box-shadow: 0 1px 3px rgba(0,0,0,0.5) !important; }
+html.dark .shadow-2xl { box-shadow: 0 20px 60px rgba(0,0,0,0.7) !important; }
+
+/* ── Footer ── */
+html.dark footer { background: #111115 !important; color: var(--clr-text-2) !important; }
+
 /* NProgress */
 #nprogress .bar { background: #FF4A2A !important; height: 3px !important; }
 #nprogress .peg { box-shadow: 0 0 10px #FF4A2A, 0 0 5px #FF4A2A !important; }

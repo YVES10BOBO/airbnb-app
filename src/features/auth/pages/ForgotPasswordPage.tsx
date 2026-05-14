@@ -1,24 +1,45 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import axios from 'axios';
 import toast from 'react-hot-toast';
+import { authService } from '../../../api';
+import { isValidEmail } from '../utils/validation';
 import './LoginPage.css';
 import './ForgotPasswordPage.css';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
-  const [showPwd, setShowPwd] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (password !== confirm) {
-      toast.error('Passwords do not match');
+    setError(null);
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!isValidEmail(normalizedEmail)) {
+      setError('Please enter a valid email address.');
       return;
     }
-    toast.success('Password reset instructions sent!');
+    setSubmitting(true);
+    try {
+      const res = await authService.forgotPassword(normalizedEmail);
+      toast.success(res.message ?? 'If your email is registered, reset instructions were sent.');
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const apiError = err.response?.data?.error;
+        if (typeof apiError === 'string') {
+          setError(apiError);
+        } else if (!err.response) {
+          setError('Cannot reach the server. Check that the API is running and VITE_API_URL is correct.');
+        } else {
+          setError('Failed to send reset email. Try again or contact support.');
+        }
+      } else {
+        setError('Failed to send reset email.');
+      }
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -43,40 +64,10 @@ export default function ForgotPasswordPage() {
             />
           </div>
 
-          <div className="auth-field">
-            <label className="auth-field__label">*Password</label>
-            <div className="auth-field__pwd-wrap">
-              <input
-                className="auth-field__input"
-                type={showPwd ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <button type="button" className="auth-field__eye" onClick={() => setShowPwd((v) => !v)}>
-                {showPwd ? <FaEye /> : <FaEyeSlash />}
-              </button>
-            </div>
-          </div>
+          {error && <p className="auth-form__error">{error}</p>}
 
-          <div className="auth-field">
-            <label className="auth-field__label">*Confirm Password</label>
-            <div className="auth-field__pwd-wrap">
-              <input
-                className="auth-field__input"
-                type={showConfirm ? 'text' : 'password'}
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                required
-              />
-              <button type="button" className="auth-field__eye" onClick={() => setShowConfirm((v) => !v)}>
-                {showConfirm ? <FaEye /> : <FaEyeSlash />}
-              </button>
-            </div>
-          </div>
-
-          <button type="submit" className="auth-submit forgot-submit">
-            Reset Password
+          <button type="submit" className="auth-submit forgot-submit" disabled={submitting}>
+            {submitting ? 'Sending...' : 'Send Reset Link'}
           </button>
         </form>
 

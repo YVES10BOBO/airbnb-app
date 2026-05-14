@@ -59,8 +59,20 @@
 
 .star-rating { display: flex; gap: 2px; }
 
-.star { font-size: 20px; color: #e0e0e0; }
-.star--filled { color: #FF4A2A; }
+.star.star--icon { font-size: 18px; color: #e0e0e0; }
+.star.star--icon.star--filled { color: #FF4A2A; }
+
+.review-card__img--empty {
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+}
+
+.reviews-page__state,
+.reviews-page__empty {
+  padding: 48px 16px;
+  text-align: center;
+  color: #717171;
+  font-size: 15px;
+}
 
 .review-card__comment {
   font-size: 14px;

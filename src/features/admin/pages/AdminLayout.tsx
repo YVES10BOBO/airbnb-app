@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   FaTachometerAlt, FaUsers, FaList, FaCalendarAlt,
-  FaStar, FaSignOutAlt, FaShieldAlt,
+  FaSignOutAlt, FaShieldAlt,
 } from 'react-icons/fa';
 import { useAuth } from '../../auth/hooks/useAuth';
 import './AdminLayout.css';
@@ -13,11 +13,10 @@ const NAV = [
   { to: '/admin/users',              icon: <FaUsers />,         text: 'Users'         },
   { to: '/admin/listings',           icon: <FaList />,          text: 'Listings'      },
   { to: '/admin/bookings',           icon: <FaCalendarAlt />,   text: 'Bookings'      },
-  { to: '/admin/reviews',            icon: <FaStar />,          text: 'Reviews'       },
 ];
 
 export default function AdminLayout() {
-  const { logout, user } = useAuth();
+  const { logout } = useAuth();
   const navigate = useNavigate();
 
   function handleLogout() { logout(); navigate('/'); }
@@ -31,17 +30,6 @@ export default function AdminLayout() {
           <div>
             <p className="adm-sidebar__brand-name">Admin Panel</p>
             <p className="adm-sidebar__brand-sub">Liston Platform</p>
-          </div>
-        </div>
-
-        {/* Admin identity */}
-        <div className="adm-sidebar__user">
-          <div className="adm-sidebar__avatar">
-            {user?.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-          </div>
-          <div className="adm-sidebar__user-info">
-            <p className="adm-sidebar__user-name">{user?.name}</p>
-            <span className="adm-sidebar__role-badge">Administrator</span>
           </div>
         </div>
 
