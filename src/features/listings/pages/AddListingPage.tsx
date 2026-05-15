@@ -110,7 +110,7 @@ export default function AddListingPage() {
   function handlePhotos(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     const newPhotos = files.map(f => ({ url: URL.createObjectURL(f), name: f.name, file: f }));
-    setForm(f => ({ ...f, photos: [...f.photos, ...newPhotos].slice(0, 10) }));
+    setForm(f => ({ ...f, photos: [...f.photos, ...newPhotos].slice(0, 5) }));
     e.target.value = '';
   }
 
@@ -335,7 +335,7 @@ export default function AddListingPage() {
             <div className="al-dropzone" onClick={() => fileRef.current?.click()}>
               <FaCloudUploadAlt className="al-dropzone__icon" />
               <p className="al-dropzone__text">Click to upload photos</p>
-              <p className="al-dropzone__hint">JPG, PNG, or WebP up to 10 MB each · max 10 picks (server saves up to 5)</p>
+              <p className="al-dropzone__hint">JPG, PNG, or WebP up to 10 MB each · max 5 photos</p>
               <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={handlePhotos} />
             </div>
 
