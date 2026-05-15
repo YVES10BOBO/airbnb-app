@@ -2,10 +2,10 @@ import type { ApiListing } from '../../../api/types';
 import type { Listing } from '../types';
 
 export const TYPE_TO_CATEGORY: Record<string, Listing['category']> = {
-  VILLA: 'beach',
-  CABIN: 'mountain',
-  APARTMENT: 'city',
-  HOUSE: 'countryside',
+  VILLA: 'villa',
+  CABIN: 'cabin',
+  APARTMENT: 'apartment',
+  HOUSE: 'house',
 };
 
 export function mapApiListingToListing(l: ApiListing): Listing {

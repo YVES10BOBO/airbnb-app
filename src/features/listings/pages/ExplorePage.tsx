@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { FaUmbrellaBeach, FaMountain, FaCity, FaLeaf, FaSearch, FaMagic, FaMapMarkerAlt, FaStar, FaTimes } from 'react-icons/fa';
+import { FaUmbrellaBeach, FaMountain, FaBuilding, FaHome, FaSearch, FaMagic, FaMapMarkerAlt, FaStar, FaTimes } from 'react-icons/fa';
 import { useStore } from '../../../store/StoreContext';
 import { aiService } from '../../../api';
 import type { ApiListing } from '../../../api/types';
 import './ExplorePage.css';
 
 const CATEGORIES = [
-  { key: 'beach', label: 'Beach', icon: <FaUmbrellaBeach />, desc: 'Ocean views, sand, and sun', img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&h=400&fit=crop' },
-  { key: 'mountain', label: 'Mountain', icon: <FaMountain />, desc: 'Fresh air and scenic peaks', img: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop' },
-  { key: 'city', label: 'City', icon: <FaCity />, desc: 'Urban stays in top cities', img: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=600&h=400&fit=crop' },
-  { key: 'countryside', label: 'Countryside', icon: <FaLeaf />, desc: 'Peaceful rural escapes', img: 'https://images.unsplash.com/photo-1500076656116-558758c991c1?w=600&h=400&fit=crop' },
+  { key: 'villa',     label: 'Villa',     icon: <FaUmbrellaBeach />, desc: 'Luxury villas with pools & views',   img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&h=400&fit=crop' },
+  { key: 'cabin',     label: 'Cabin',     icon: <FaMountain />,      desc: 'Cozy cabins & mountain lodges',      img: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop' },
+  { key: 'apartment', label: 'Apartment', icon: <FaBuilding />,      desc: 'Modern city apartments & lofts',     img: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=600&h=400&fit=crop' },
+  { key: 'house',     label: 'House',     icon: <FaHome />,          desc: 'Spacious homes & family properties', img: 'https://images.unsplash.com/photo-1500076656116-558758c991c1?w=600&h=400&fit=crop' },
 ] as const;
 
 const EXAMPLE_QUERIES = [

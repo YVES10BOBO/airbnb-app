@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaSearch, FaSlidersH, FaTimes, FaStar, FaMapMarkerAlt, FaChevronDown, FaThLarge, FaMap, FaUmbrellaBeach, FaMountain, FaCity, FaLeaf } from 'react-icons/fa';
+import { FaSearch, FaSlidersH, FaTimes, FaStar, FaMapMarkerAlt, FaChevronDown, FaThLarge, FaMap, FaUmbrellaBeach, FaMountain, FaBuilding, FaHome } from 'react-icons/fa';
 import { useStore } from '../../../store/StoreContext';
 import ListingCover from '../components/ListingCover';
 import { useListings } from '../hooks/useListings';
@@ -9,12 +9,12 @@ import ListingCard from '../components/ListingCard';
 import Spinner from '../../../shared/components/Spinner';
 import './ListingsPage.css';
 
-const CATEGORIES = ['beach', 'mountain', 'city', 'countryside'] as const;
+const CATEGORIES = ['villa', 'cabin', 'apartment', 'house'] as const;
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
-  beach:       <FaUmbrellaBeach />,
-  mountain:    <FaMountain />,
-  city:        <FaCity />,
-  countryside: <FaLeaf />,
+  villa:     <FaUmbrellaBeach />,
+  cabin:     <FaMountain />,
+  apartment: <FaBuilding />,
+  house:     <FaHome />,
 };
 const SORT_OPTIONS = [
   { value: 'default', label: 'Recommended' },

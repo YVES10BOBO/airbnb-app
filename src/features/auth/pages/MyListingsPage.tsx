@@ -13,10 +13,10 @@ type HostListing = ApiListing & { _count?: { bookings?: number } };
 
 function mapType(type: ApiListing['type']): string {
   switch (type) {
-    case 'VILLA': return 'beach';
-    case 'CABIN': return 'mountain';
-    case 'HOUSE': return 'countryside';
-    default: return 'city';
+    case 'VILLA': return 'villa';
+    case 'CABIN': return 'cabin';
+    case 'HOUSE': return 'house';
+    default: return 'apartment';
   }
 }
 

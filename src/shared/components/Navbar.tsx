@@ -120,9 +120,18 @@ export default function Navbar() {
               <div className="absolute top-[calc(100%+10px)] right-0 bg-white border border-gray-100 rounded-2xl shadow-2xl w-56 overflow-hidden z-50 py-1">
                 {isAuthenticated ? (
                   <>
-                    <p className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                      {user?.name}
-                    </p>
+                    <div className="px-4 py-2 flex items-center justify-between gap-2">
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider truncate">
+                        {user?.name}
+                      </p>
+                      <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${
+                        user?.role === 'admin' ? 'bg-orange-100 text-orange-600' :
+                        user?.role === 'host'  ? 'bg-green-100 text-green-700'  :
+                                                 'bg-sky-100 text-sky-600'
+                      }`}>
+                        {user?.role}
+                      </span>
+                    </div>
                     <div className="border-t border-gray-100 my-1" />
                     {user?.role === 'admin' && (
                       <NavLink to="/admin" className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-orange-600 hover:bg-orange-50 no-underline transition-colors" onClick={() => setUserMenuOpen(false)}>
@@ -216,7 +225,16 @@ export default function Navbar() {
                 {/* Account links */}
                 {isAuthenticated ? (
                   <div className="p-3 border-b border-gray-100">
-                    <p className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">{user?.name}</p>
+                    <div className="px-3 py-1 flex items-center justify-between gap-2 mb-1">
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider truncate">{user?.name}</p>
+                      <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${
+                        user?.role === 'admin' ? 'bg-orange-100 text-orange-600' :
+                        user?.role === 'host'  ? 'bg-green-100 text-green-700'  :
+                                                 'bg-sky-100 text-sky-600'
+                      }`}>
+                        {user?.role}
+                      </span>
+                    </div>
                     {user?.role === 'admin' && (
                       <NavLink to="/admin" className="flex items-center gap-3 py-2.5 px-3 text-sm font-semibold text-orange-600 hover:bg-orange-50 rounded-lg no-underline transition-colors" onClick={() => setMobileOpen(false)}><FaShieldAlt className="text-xs" /> Admin Panel</NavLink>
                     )}

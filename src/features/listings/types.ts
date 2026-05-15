@@ -11,7 +11,7 @@ export interface Listing {
   img: string;
   /** All photo URLs from the API for detail / gallery (may be empty). */
   photoUrls: string[];
-  category: 'beach' | 'mountain' | 'city' | 'countryside';
+  category: 'villa' | 'cabin' | 'apartment' | 'house';
   /** Present when loaded from API detail. */
   description?: string;
   amenities?: string[];

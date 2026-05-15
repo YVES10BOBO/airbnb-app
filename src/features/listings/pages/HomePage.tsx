@@ -2,9 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   FaSearch, FaMapMarkerAlt, FaStar, FaArrowUp,
-  FaUmbrellaBeach, FaMountain, FaCity, FaLeaf,
+  FaUmbrellaBeach, FaMountain, FaBuilding, FaHome,
   FaHeart, FaRegHeart, FaChevronLeft, FaChevronRight,
-  FaShieldAlt, FaHeadset, FaCheckCircle, FaHandPaper,
+  FaHandPaper,
 } from 'react-icons/fa';
 import { useStore } from '../../../store/StoreContext';
 import ListingCover from '../components/ListingCover';
@@ -16,38 +16,12 @@ import numeral from 'numeral';
 import './HomePage.css';
 
 const CATEGORIES = [
-  { key: 'beach', label: 'Beach', icon: <FaUmbrellaBeach />, desc: 'Sun, sand & sea stays', color: '#e0f2fe', iconColor: '#0284c7' },
-  { key: 'mountain', label: 'Mountain', icon: <FaMountain />, desc: 'Alpine & highland retreats', color: '#dcfce7', iconColor: '#16a34a' },
-  { key: 'city', label: 'City', icon: <FaCity />, desc: 'Urban apartments & lofts', color: '#f3e8ff', iconColor: '#9333ea' },
-  { key: 'countryside', label: 'Countryside', icon: <FaLeaf />, desc: 'Farms, vineyards & estates', color: '#fef3c7', iconColor: '#d97706' },
+  { key: 'villa',     label: 'Villa',     icon: <FaUmbrellaBeach />, desc: 'Luxury villas with pools & views',      color: '#e0f2fe', iconColor: '#0284c7' },
+  { key: 'cabin',     label: 'Cabin',     icon: <FaMountain />,      desc: 'Cozy cabins & mountain lodges',         color: '#dcfce7', iconColor: '#16a34a' },
+  { key: 'apartment', label: 'Apartment', icon: <FaBuilding />,      desc: 'Modern city apartments & lofts',        color: '#f3e8ff', iconColor: '#9333ea' },
+  { key: 'house',     label: 'House',     icon: <FaHome />,          desc: 'Spacious homes & family properties',    color: '#fef3c7', iconColor: '#d97706' },
 ];
 
-const HOW_STEPS = [
-  {
-    num: '01',
-    title: 'Search Your Destination',
-    desc: 'Enter your city, country or vibe. Our smart search finds the best stays near you.',
-    icon: <FaSearch />,
-  },
-  {
-    num: '02',
-    title: 'Pick the Perfect Stay',
-    desc: 'Browse verified listings with real photos, honest reviews, and transparent pricing.',
-    icon: <FaStar />,
-  },
-  {
-    num: '03',
-    title: 'Book & Enjoy',
-    desc: 'Secure instant booking, flexible cancellation, and 24/7 support from check-in to checkout.',
-    icon: <FaCheckCircle />,
-  },
-];
-
-const TRUST_ITEMS = [
-  { icon: <FaShieldAlt />, title: 'Verified Listings', desc: 'Every property is manually reviewed for quality and accuracy before going live.' },
-  { icon: <FaStar />, title: 'Honest Reviews', desc: 'Only guests who actually stayed can leave reviews — no fake ratings, ever.' },
-  { icon: <FaHeadset />, title: '24/7 Support', desc: 'Our team is available around the clock to assist hosts and guests alike.' },
-];
 
 
 export default function HomePage() {
@@ -187,7 +161,7 @@ export default function HomePage() {
           </form>
           <div className="hp-hero__tags">
             <span className="hp-hero__tag-label">Popular:</span>
-            {['Beach', 'Mountain', 'City', 'Countryside'].map((t) => (
+            {['Villa', 'Cabin', 'Apartment', 'House'].map((t) => (
               <button key={t} className="hp-hero__tag" onClick={() => navigate(`/listings`)}>
                 {t}
               </button>
@@ -195,23 +169,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* ── Stats bar ── */}
-      <div className="hp-stats">
-        <div className="hp-stats__inner">
-          {[
-            { val: `${listings.length}+`, label: 'Total Listings' },
-            { val: '120+', label: 'Cities Worldwide' },
-            { val: '85K+', label: 'Happy Guests' },
-            { val: '4.9', label: 'Average Rating' },
-          ].map((s) => (
-            <div key={s.label} className="hp-stat">
-              <div className="hp-stat__val">{s.val}</div>
-              <div className="hp-stat__label">{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* ── Categories ── */}
       <section className="hp-section">
@@ -300,31 +257,6 @@ export default function HomePage() {
             <FaChevronRight />
           </button>
         </div>
-        <div className="hp-featured-footer">
-          <Link to="/listings" className="hp-featured-footer__link">View all listings →</Link>
-        </div>
-      </section>
-
-      {/* ── How It Works ── */}
-      <section className="hp-section">
-        <div className="hp-section__head">
-          <p className="hp-section__sub">Best Way</p>
-          <h2 className="hp-section__title">Find Your Dream Place <em>The Best Way</em></h2>
-          <p className="hp-section__desc">Discover exciting categories. <span className="hp-section__desc--red">Find what you're looking for.</span></p>
-        </div>
-        <div className="hp-how">
-          {HOW_STEPS.map((step, i) => (
-            <div key={step.num} className="hp-how-step">
-              <div className="hp-how-step__num">{step.num}</div>
-              <div className="hp-how-step__icon">{step.icon}</div>
-              <h3 className="hp-how-step__title">{step.title}</h3>
-              <p className="hp-how-step__desc">{step.desc}</p>
-              {i < HOW_STEPS.length - 1 && (
-                <div className="hp-how-step__connector" aria-hidden="true" />
-              )}
-            </div>
-          ))}
-        </div>
       </section>
 
       {/* ── Available Listings preview ── */}
@@ -357,7 +289,7 @@ export default function HomePage() {
                 <p className="hp-preview-card__loc"><FaMapMarkerAlt className="hp-featured-card__pin" />{l.location}</p>
                 <div className="hp-preview-card__footer">
                   <span className="hp-featured-card__price">{numeral(l.price).format('$0,0')}<span className="hp-featured-card__night"> / night</span></span>
-                  <span className="hp-preview-card__type">{l.category}</span>
+                  <span className="hp-preview-card__type">{l.category.charAt(0).toUpperCase() + l.category.slice(1)}</span>
                 </div>
               </div>
             </div>
@@ -365,24 +297,6 @@ export default function HomePage() {
         </div>
         <div className="hp-featured-footer">
           <Link to="/listings" className="hp-featured-footer__link">View all listings →</Link>
-        </div>
-      </section>
-
-      {/* ── Why Trust Us ── */}
-      <section className="hp-section">
-        <div className="hp-section__head">
-          <p className="hp-section__sub">Why ListOn</p>
-          <h2 className="hp-section__title">Travel With <em>Confidence</em></h2>
-          <p className="hp-section__desc">We've built every feature with trust, safety and great experiences in mind.</p>
-        </div>
-        <div className="hp-trust">
-          {TRUST_ITEMS.map((item) => (
-            <div key={item.title} className="hp-trust-card">
-              <div className="hp-trust-card__icon">{item.icon}</div>
-              <h3 className="hp-trust-card__title">{item.title}</h3>
-              <p className="hp-trust-card__desc">{item.desc}</p>
-            </div>
-          ))}
         </div>
       </section>
 
